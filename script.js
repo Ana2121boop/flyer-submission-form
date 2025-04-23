@@ -526,4 +526,31 @@ function removeProductData(id) { productDataStore.delete(id); }
 // --- Global Initialization ---
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initializeForm); }
 else { initializeForm(); } // Already loaded
+document.addEventListener("DOMContentLoaded", () => {
+  const flyerForm = document.getElementById("flyerForm");
+  const successModal = document.getElementById("successModal");
+  const modalCloseBtn = document.getElementById("modalCloseBtn");
+
+  flyerForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    // Optional: form validation logic here
+    // Show the modal
+    successModal.classList.add("visible");
+
+    // Optional: reset the form
+    flyerForm.reset();
+  });
+
+  modalCloseBtn.addEventListener("click", () => {
+    successModal.classList.remove("visible");
+  });
+
+  // Optional: click outside to close
+  successModal.addEventListener("click", (e) => {
+    if (e.target === successModal) {
+      successModal.classList.remove("visible");
+    }
+  });
+});
 
