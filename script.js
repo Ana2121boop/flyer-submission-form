@@ -531,14 +531,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const successModal = document.getElementById("successModal");
   const modalCloseBtn = document.getElementById("modalCloseBtn");
 
+document.addEventListener("DOMContentLoaded", () => {
+  const flyerForm = document.getElementById("flyerForm");
+  const successModal = document.getElementById("successModal");
+  const modalCloseBtn = document.getElementById("modalCloseBtn");
+
   flyerForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    // Optional: form validation logic here
+    // You can add validation here if needed before showing the modal
+
     // Show the modal
     successModal.classList.add("visible");
 
-    // Optional: reset the form
+    // Optional: Reset form
     flyerForm.reset();
   });
 
@@ -546,11 +552,11 @@ document.addEventListener("DOMContentLoaded", () => {
     successModal.classList.remove("visible");
   });
 
-  // Optional: click outside to close
   successModal.addEventListener("click", (e) => {
     if (e.target === successModal) {
       successModal.classList.remove("visible");
     }
   });
 });
+
 
