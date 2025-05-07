@@ -31,8 +31,8 @@
                 <div class="grid two-col" style="margin-top: 15px;">
                      <div class="info-field"><strong>Submission Date:</strong> <span id="submissionDate">--</span></div>
                      <div class="info-field"><strong>Last Updated:</strong> <span id="lastUpdated">--</span></div>
-                 </div>
-                 <div class="grid two-col" style="margin-top: 15px;">
+                </div>
+                <div class="grid two-col" style="margin-top: 15px;">
                     <div class="form-field">
                         <label for="flyerValidStartDate">Flyer Valid Start Date:*</label>
                         <input type="date" id="flyerValidStartDate" name="flyerValidStartDate" required>
@@ -42,67 +42,61 @@
                         <input type="date" id="flyerValidEndDate" name="flyerValidEndDate" required>
                     </div>
                 </div>
-                 <div class="form-field" style="margin-top: 15px;">
+                <div class="form-field" style="margin-top: 15px;">
                     <label for="generalNotes">General Notes:</label>
                     <textarea id="generalNotes" name="generalNotes" rows="4" placeholder="Any overall comments or instructions..."></textarea>
                 </div>
             </section>
+            <section class="form-section flyer-products-section" data-editing="true"> <h2>Flyer Products (Page 1 - Max 8 Slots)</h2>
 
-            <section class="form-section">
-                <h2>Flyer Products</h2>
-                <div id="productEditArea" class="product-edit-container" style="display: none;">
-                    <div id="productFormFieldsContainer">
-                        </div>
-                    <div class="product-edit-actions">
-                        <button type="button" id="saveProductBtn" class="button button-primary">Save Product</button>
-                        <button type="button" id="cancelProductBtn" class="button button-secondary">Cancel</button>
+                <div id="flyerProductsGrid" class="products-grid-container four-columns">
                     </div>
-                     <p id="productEditError" class="error-message" style="display: none;"></p>
-                </div>
-                <div id="productList"></div>
-                 <button type="button" id="addProductBtn" class="button button-primary">Add Product</button>
-                 <p id="productSubmitError" class="error-message" style="display: none;">At least one product is required.</p>
-            </section>
+                <p id="flyerProductCounter" style="margin-top:10px; text-align: right;">Slots Filled: 0 / 8</p>
 
+                <div class="page-actions">
+                     <button type="button" id="editSaveFlyerBtn" class="edit-save-page-btn button button-primary" data-mode="save">Save Page</button> </div>
+
+                <p id="productSubmitError" class="error-message" style="display: none;">At least one product is required.</p>
+            </section>
+            <div class="additional-pages-controls" style="text-align: center; margin: 20px 0 30px 0;">
+                <button type="button" id="addNewPageBtn" class="button button-secondary">Add New Page (4x4 Grid)</button>
+            </div>
+
+            <section class="form-section additional-pages-section">
+                 <div id="additionalPagesContainer">
+                    </div>
+            </section>
             <section class="form-section" id="socialMediaSection">
-                <h2>Social Media Promotion (Max 7)</h2>
-                <div id="socialItemsList"></div>
-                <button type="button" id="addSocialBtn" class="button button-secondary" disabled>Add Social Media Item</button>
-                <p id="socialLimitError" class="error-message" style="display: none;">Maximum 7 social media items reached.</p>
+                 <h2>Social Media Promotion (Max 7)</h2>
+                 <div id="socialItemsList"></div>
+                 <button type="button" id="addSocialBtn" class="button button-secondary" disabled>Add Social Media Item</button>
+                 <p id="socialLimitError" class="error-message" style="display: none;">Maximum 7 social media items reached.</p>
                  <p id="socialProductError" class="error-message" style="display: block;">Add products before selecting for social media.</p>
-            </section>
-
-            <section class="form-section">
-                <h2>Print Marketing Requests</h2>
-                <div class="checkbox-group">
+             </section>
+             <section class="form-section">
+                 <h2>Print Marketing Requests</h2>
+                 <div class="checkbox-group">
                     <label><input type="checkbox" id="reqPriceTags" name="reqPriceTags"> Price Tags</label>
                     <label><input type="checkbox" id="reqPosters" name="reqPosters"> Posters</label>
                     <label><input type="checkbox" id="reqSignage" name="reqSignage"> In-Store Signage / Banners</label>
-                </div>
+                 </div>
                  <div class="form-field">
                     <label for="printNotes">Notes for Print Team:</label>
                     <textarea id="printNotes" name="printNotes" rows="3" placeholder="Specific quantities, sizes, or instructions..."></textarea>
-                </div>
-            </section>
-
-            <div class="submit-container">
+                 </div>
+             </section>
+             <div class="submit-container">
                  <p id="formError" class="error-message" style="display: none;"></p>
                  <button type="submit" id="submitBtn" class="button button-primary">Submit Flyer</button>
-            </div>
+             </div>
+             </form>
 
-        </form>
         <section id="adminSection" style="display: none; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc;">
             <div id="adminLogin">
                 <h2>Admin Login</h2>
                 <form id="adminLoginForm" novalidate>
-                    <div class="form-field">
-                        <label for="adminUsername">Username:</label>
-                        <input type="text" id="adminUsername" name="adminUsername" required>
-                    </div>
-                    <div class="form-field">
-                        <label for="adminPassword">Password:</label>
-                        <input type="password" id="adminPassword" name="adminPassword" required>
-                    </div>
+                    <div class="form-field"><label for="adminUsername">Username:</label><input type="text" id="adminUsername" name="adminUsername" required></div>
+                    <div class="form-field"><label for="adminPassword">Password:</label><input type="password" id="adminPassword" name="adminPassword" required></div>
                     <button type="submit" class="button button-primary">Login</button>
                     <p id="adminLoginError" class="error-message" style="display: none;"></p>
                 </form>
@@ -111,98 +105,95 @@
                 <h2>Admin Dashboard</h2>
                 <button id="adminLogoutBtn" class="button button-secondary" style="margin-bottom: 15px;">Logout</button>
                 <h3>All Submissions</h3>
-                <div id="adminSubmissionsList"> <p>Loading submissions...</p>
-                </div>
+                <div id="adminSubmissionsList"> <p>Loading submissions...</p></div>
             </div>
         </section>
         <div style="text-align: right; margin-top: 20px; margin-bottom: 20px;">
              <button id="showAdminLoginBtn" class="button button-tertiary">Admin Access</button>
-         </div>
+        </div>
 
     </div> <template id="productFormFieldsTemplate">
          <div class="grid three-col">
-              <div class="form-field"><label>Product Name:*</label><input type="text" name="productName" required placeholder="e.g., Premium Latex Paint"></div>
-              <div class="form-field"><label>Brand Name:*</label><input type="text" name="brandName" required placeholder="e.g., ColorPro"></div>
-              <div class="form-field"><label>Category:*</label><select name="category" required><option value="" disabled selected>Select...</option><option value="Lumber">Lumber</option><option value="Mouldings">Mouldings</option><option value="Paint">Paint</option><option value="Tools">Tools</option><option value="Hardware">Hardware</option></select></div>
-              <div class="form-field"><label>Size/Dimensions:</label><input type="text" name="sizeDimensions" placeholder="e.g., 1 Gallon or 2x4x8"></div>
-              <div class="form-field"><label>Colour/Finish:</label><input type="text" name="colourFinish" placeholder="e.g., Eggshell White"></div>
-              <div class="form-field"><label>SKU:</label><input type="text" name="sku" placeholder="Optional product SKU"></div>
-              <div class="form-field"><label>Regular Price:*</label><input type="number" name="regularPrice" step="0.01" min="0.01" required class="price-input" placeholder="e.g., 45.50"></div>
-               <div class="form-field"><label>Sale Price:*</label><input type="number" name="salePrice" step="0.01" min="0.01" required class="price-input" placeholder="e.g., 39.99"></div>
-               <div class="form-field"><label>Discount %:</label><input type="text" name="discountPercent" readonly disabled class="discount-display" placeholder="Auto-calculated"></div>
-          </div>
-          <div class="form-field">
-             <label>Special Features:</label>
-             <textarea name="specialFeatures" rows="2" placeholder="e.g., Low VOC, Lifetime Warranty"></textarea>
+             <div class="form-field"><label>Product Name:*</label><input type="text" name="productName" required placeholder="e.g., Premium Latex Paint"></div>
+             <div class="form-field"><label>Brand Name:*</label><input type="text" name="brandName" required placeholder="e.g., ColorPro"></div>
+             <div class="form-field"><label>Category:*</label><select name="category" required><option value="" disabled selected>Select...</option><option value="Lumber">Lumber</option><option value="Mouldings">Mouldings</option><option value="Paint">Paint</option><option value="Tools">Tools</option><option value="Hardware">Hardware</option></select></div>
+             <div class="form-field"><label>Size/Dimensions:</label><input type="text" name="sizeDimensions" placeholder="e.g., 1 Gallon or 2x4x8"></div>
+             <div class="form-field"><label>Colour/Finish:</label><input type="text" name="colourFinish" placeholder="e.g., Eggshell White"></div>
+             <div class="form-field"><label>SKU:</label><input type="text" name="sku" placeholder="Optional product SKU"></div>
+             <div class="form-field"><label>Regular Price:*</label><input type="number" name="regularPrice" step="0.01" min="0.01" required class="price-input" placeholder="e.g., 45.50"></div>
+             <div class="form-field"><label>Sale Price:*</label><input type="number" name="salePrice" step="0.01" min="0.01" required class="price-input" placeholder="e.g., 39.99"></div>
+             <div class="form-field"><label>Discount %:</label><input type="text" name="discountPercent" readonly disabled class="discount-display" placeholder="Auto-calculated"></div>
          </div>
-          <div class="checkbox-group">
-              <label><input type="checkbox" name="isMainFlyerProduct"> Main Flyer Product?</label>
-              <label><input type="checkbox" name="isBundle" class="bundle-checkbox"> Is this a Bundle?</label>
-              <label><input type="checkbox" name="requestStockImage"> Request Stock Image?</label>
-          </div>
-          <div class="form-field bundle-items-container" style="display: none;">
-              <label>Additional Items in Bundle:*</label>
-              <textarea name="bundleItems" rows="2" placeholder="List items included in the bundle..."></textarea>
-          </div>
-           <div class="form-field">
-                 <label>Upload Custom Product Image (Optional):</label>
-                 <input type="file" name="productImage" accept="image/*" class="product-image-input">
-                 <div class="image-preview">
-                     <small>No image selected.</small>
-                 </div>
-             </div>
+         <div class="form-field"><label>Special Features:</label><textarea name="specialFeatures" rows="2" placeholder="e.g., Low VOC, Lifetime Warranty"></textarea></div>
+         <div class="checkbox-group">
+             <label><input type="checkbox" name="isMainFlyerProduct"> Main Flyer Product?</label>
+             <label><input type="checkbox" name="isBundle" class="bundle-checkbox"> Is this a Bundle?</label>
+             <label><input type="checkbox" name="requestStockImage"> Request Stock Image?</label>
+         </div>
+         <div class="form-field bundle-items-container" style="display: none;"><label>Additional Items in Bundle:*</label><textarea name="bundleItems" rows="2" placeholder="List items included in the bundle..."></textarea></div>
+         <div class="form-field"><label>Upload Custom Product Image (Optional):</label><input type="file" name="productImage" accept="image/*" class="product-image-input"><div class="image-preview"><small>No image selected.</small></div></div>
     </template>
 
     <template id="productDisplayTemplate">
-         <div class="product-item list-item" data-product-id="">
-              <div class="product-display-content"></div>
-              <img src="" alt="Product Preview" class="product-preview-img" style="display: none;">
-              <button type="button" class="remove-item-btn button-danger" title="Remove Product">&times;</button>
-         </div>
-     </template>
+        <div class="product-item list-item" data-product-id="">
+            <div class="product-display-content"></div>
+            <img src="" alt="Product Preview" class="product-preview-img" style="display: none;">
+            <div class="product-item-actions">
+                <button type="button" class="edit-product-btn button button-secondary" title="Edit Product">Edit</button>
+                <button type="button" class="remove-item-btn button-danger" title="Remove Product">&times;</button>
+            </div>
+        </div>
+    </template>
 
     <template id="socialItemTemplate">
-         <div class="social-item list-item" data-social-id="">
-               <div class="form-field">
-                  <label>Select Product:*</label>
-                  <select name="socialProductId" required class="social-product-select">
-                      <option value="" disabled selected>Select Product...</option>
-                  </select>
-              </div>
-              <div class="form-field">
-                  <label>Preferred Post Type:*</label>
-                  <select name="socialPostType" required>
-                      <option value="" disabled selected>Select Type...</option>
-                      <option value="Image">Image</option>
-                      <option value="Reel">Reel</option>
-                      <option value="Carousel">Carousel</option>
-                      <option value="Story">Story</option>
-                  </select>
-              </div>
-              <div class="form-field full-width">
-                  <label>Caption / Selling Point:</label>
-                  <input type="text" name="socialCaption" placeholder="e.g., Limited time offer!">
-              </div>
-               <button type="button" class="remove-item-btn button-danger" title="Remove Item">&times;</button>
-         </div>
-     </template>
-    <div id="successModal" class="modal-overlay">
-         <div class="modal-box">
-             <button type="button" id="modalCloseBtn" class="modal-close-btn" title="Close">&times;</button>
-             <h2>Success!</h2>
-             <p id="modalMessage">Your action was successful.</p>
-         </div>
-     </div>
+        <div class="social-item list-item" data-social-id="">
+            <div class="form-field"><label>Select Product:*</label><select name="socialProductId" required class="social-product-select"><option value="" disabled selected>Select Product...</option></select></div>
+            <div class="form-field"><label>Preferred Post Type:*</label><select name="socialPostType" required><option value="" disabled selected>Select Type...</option><option value="Image">Image</option><option value="Reel">Reel</option><option value="Carousel">Carousel</option><option value="Story">Story</option></select></div>
+            <div class="form-field full-width"><label>Caption / Selling Point:</label><input type="text" name="socialCaption" placeholder="e.g., Limited time offer!"></div>
+            <button type="button" class="remove-item-btn button-danger" title="Remove Item">&times;</button>
+        </div>
+    </template>
 
-     <div id="submissionDetailModal" class="modal-overlay">
-          <div class="modal-box" style="text-align: left; max-width: 700px;">
-              <button type="button" id="submissionDetailCloseBtn" class="modal-close-btn" title="Close">&times;</button>
-              <h2>Submission Details</h2>
-              <div id="submissionDetailContent">
-                  <p>Loading details...</p>
-              </div>
-          </div>
-      </div>
+    <template id="newPageSectionTemplate">
+        <div class="page-section" data-editing="true"> <h3 class="page-title">Page Title Here</h3>
+            <div class="products-grid-container four-columns new-page-grid">
+                </div>
+            <p class="page-product-counter" style="margin-top:10px; text-align: right;">Slots Filled: 0 / 16</p>
+            <div class="page-actions">
+                <button type="button" class="edit-save-page-btn button button-primary" data-mode="save">Save Page</button> <button type="button" class="remove-page-btn button button-danger">Remove Page</button>
+            </div>
+        </div>
+    </template>
+    <div id="productEditModal" class="modal-overlay">
+        <div class="modal-box product-edit-modal-box">
+            <button type="button" id="productEditCloseBtn" class="modal-close-btn" title="Close">&times;</button>
+            <h2>Add/Edit Product</h2>
+            <div id="productEditArea" class="product-edit-container">
+                <div id="productFormFieldsContainer"></div>
+                <div class="product-edit-actions">
+                    <button type="button" id="saveProductBtn" class="button button-primary">Save Product</button>
+                    <button type="button" id="cancelProductBtn" class="button button-secondary">Cancel</button>
+                </div>
+                <p id="productEditError" class="error-message" style="display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-box">
+            <button type="button" id="modalCloseBtn" class="modal-close-btn" title="Close">&times;</button>
+            <h2>Success!</h2>
+            <p id="modalMessage">Your action was successful.</p>
+        </div>
+    </div>
+
+    <div id="submissionDetailModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: left; max-width: 700px;">
+            <button type="button" id="submissionDetailCloseBtn" class="modal-close-btn" title="Close">&times;</button>
+            <h2>Submission Details</h2>
+            <div id="submissionDetailContent"><p>Loading details...</p></div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
