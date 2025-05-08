@@ -1,5 +1,5 @@
 /* =================================== */
-/* Base & Typography                 */
+/* Base & Typography                   */
 /* =================================== */
 body {
     font-family: 'Inter', sans-serif;
@@ -50,7 +50,7 @@ h3 {
 }
 
 /* =================================== */
-/* Forms & Input Fields              */
+/* Forms & Input Fields                */
 /* =================================== */
 .form-section {
     margin-bottom: 40px;
@@ -139,11 +139,13 @@ textarea {
     cursor: pointer;
     color: #495057;
     margin-bottom: 5px; /* Space below checkboxes */
+    vertical-align: middle; /* Align labels better with checkboxes */
 }
 .checkbox-group input {
     margin-right: 6px;
     vertical-align: middle;
     width: auto; /* Override full width */
+    transform: scale(1.1); /* Slightly larger */
 }
 
 .error-message {
@@ -162,14 +164,14 @@ input:focus.invalid, select:focus.invalid, textarea:focus.invalid {
 }
 
 /* =================================== */
-/* Grid Layout                       */
+/* Grid Layout                         */
 /* =================================== */
 .grid { display: grid; gap: 25px; }
 .two-col { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 .three-col { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 
 /* =================================== */
-/* Buttons                           */
+/* Buttons                             */
 /* =================================== */
 .button {
     padding: 12px 25px;
@@ -206,7 +208,7 @@ input:focus.invalid, select:focus.invalid, textarea:focus.invalid {
 #submitBtn { padding: 15px 40px; font-size: 1.1em; font-weight: bold; }
 
 /* Specific Button Placement */
-#addSocialBtn { margin-top: 15px; }
+/* #addSocialBtn { margin-top: 15px; } /* Button removed */
 
 /* Styles for the container holding the Add New Page button */
 .additional-pages-controls {
@@ -222,17 +224,17 @@ input:focus.invalid, select:focus.invalid, textarea:focus.invalid {
 /* =================================== */
 /* Product & Social Item Lists       */
 /* =================================== */
-.list-item { /* Base style for items (used by productDisplayTemplate and socialItemTemplate) */
+.list-item { /* Base style for items (used by productDisplayTemplate) */
     border: 1px solid #dee2e6;
     padding: 20px;
     margin-bottom: 20px;
     background-color: #fff;
     border-radius: 6px;
-    position: relative;
+    position: relative; /* For absolute positioned remove button */
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .list-item h4 { margin-bottom: 15px; border-bottom: 1px solid #f1f3f5; padding-bottom: 10px; font-size: 1.15em; font-weight: 500; }
-/* Base remove button style (used by social items) */
+/* Base remove button style (used by old social items, kept for product removal) */
 .remove-item-btn {
     position: absolute;
     top: 15px;
@@ -242,10 +244,7 @@ input:focus.invalid, select:focus.invalid, textarea:focus.invalid {
 }
 
 #productEditArea { /* Styling for the content area *inside* the modal */
-    border: none;
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
+    border: none; padding: 0; margin: 0; background-color: transparent;
 }
 .product-edit-actions { margin-top: 20px; text-align: right; }
 .product-preview-img { border: 1px solid #dee2e6; border-radius: 4px; }
@@ -258,13 +257,14 @@ input:focus.invalid, select:focus.invalid, textarea:focus.invalid {
 .bundle-tag { background-color: #fff3cd; color: #664d03; border-color: #ffecb5;}
 .stock-image-tag { background-color: #e2e3e5; color: #41464b; border-color: #d3d6d8;}
 
-.social-item { background-color: #f8f9fa; border-color: #e9ecef; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
-.social-item .form-field { flex: 1 1 220px; margin-bottom: 0; }
-.social-item .full-width { flex-basis: 100%; }
-.social-item .form-field label { margin-bottom: 4px; font-size: 0.9em; }
+/* REMOVED old .social-item styles as template is gone */
+/* .social-item { ... } */
+/* .social-item .form-field { ... } */
+/* .social-item .full-width { ... } */
+/* .social-item .form-field label { ... } */
 
 /* =================================== */
-/* Admin Section Styles              */
+/* Admin Section Styles                */
 /* =================================== */
 #adminSection { background-color: #f1f3f5; border: 1px solid #dee2e6; border-radius: 8px; padding: 30px 40px; margin-top: 40px; }
 #adminLogin h2, #adminDashboard h2 { color: #0056b3; border-bottom-color: #007bff; margin-bottom: 30px; font-size: 1.6em; }
@@ -318,228 +318,161 @@ input:focus.invalid, select:focus.invalid, textarea:focus.invalid {
 #submissionDetailContent .social-detail-item p { margin: 5px 0; font-size: 0.95em; }
 
 /* Styles for Product Edit Modal */
-#productEditModal .modal-box {
-    max-width: 750px; /* Or your preferred width */
-    text-align: left; /* Align form content left */
-}
-#productEditModal h2 {
-    text-align: center;
-    color: #0056b3; /* Match detail modal title */
-    margin-bottom: 25px;
-    border-bottom: 1px solid #eee; /* Optional separator */
-    padding-bottom: 15px;
-}
+#productEditModal .modal-box { max-width: 750px; text-align: left; }
+#productEditModal h2 { text-align: center; color: #0056b3; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
 
 
 /* ================================================= */
 /* NEW & UPDATED STYLES FOR PRODUCT GRID & PAGES   */
 /* ================================================= */
 
-/* Grid Container Styling (for Page 1 and new pages) */
-.products-grid-container.four-columns {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 equal columns */
-    gap: 15px; /* Space between grid items */
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
+/* Grid Container Styling */
+.products-grid-container.four-columns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; margin-bottom: 15px; }
 
-/* Styling for individual cells within the product grids */
-.products-grid-container .product-item { /* Targets product items *inside* the grid */
-    border: 1px dashed #adb5bd; /* Default dashed for placeholder */
-    padding: 15px;
-    border-radius: 5px;
-    background-color: #f8f9fa;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; /* Center placeholder button */
-    min-height: 180px;
-    box-sizing: border-box;
-    text-align: center;
-    transition: border-color 0.3s ease, background-color 0.3s ease;
-    position: static; /* Override list-item positioning if needed */
-}
+/* Individual cells within grids */
+.products-grid-container .product-item { border: 1px dashed #adb5bd; padding: 15px; border-radius: 5px; background-color: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; box-sizing: border-box; text-align: center; transition: border-color 0.3s ease, background-color 0.3s ease; position: static; }
+.products-grid-container .product-placeholder-cell { justify-content: center; }
+.product-placeholder-cell .add-product-in-cell-btn { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em; line-height: 1.2; }
+.product-placeholder-cell .add-product-in-cell-btn:hover { background-color: #5a6268; }
+.products-grid-container .product-item[data-product-id] { border-style: solid; border-color: #dee2e6; background-color: #ffffff; justify-content: flex-start; align-items: stretch; text-align: left; }
 
-/* Style for a cell that IS a placeholder */
-.products-grid-container .product-placeholder-cell {
-    justify-content: center; /* Center the button vertically */
-}
-
-/* Style for the "Add Product" button INSIDE a placeholder cell */
-.product-placeholder-cell .add-product-in-cell-btn {
-    padding: 10px 15px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    line-height: 1.2;
-    /* Inherits .button class styles if added in JS */
-}
-.product-placeholder-cell .add-product-in-cell-btn:hover {
-    background-color: #5a6268;
-}
-
-/* Styling for FILLED product items within the grid */
-.products-grid-container .product-item[data-product-id] { /* Targets filled items */
-    border-style: solid;
-    border-color: #dee2e6;
-    background-color: #ffffff;
-    justify-content: flex-start; /* Align content to top */
-    align-items: stretch;
-    text-align: left;
-}
-
-/* Styling for content within a FILLED product cell */
-.products-grid-container .product-item .product-display-content {
-    width: 100%;
-    flex-grow: 1;
-}
-
-.products-grid-container .product-item .product-display-content h4 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    font-size: 1em;
-    font-weight: 500;
-    color: #2c3e50;
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.products-grid-container .product-item .product-display-content p {
-    font-size: 0.85em;
-    margin-bottom: 5px;
-    line-height: 1.4;
-}
-
-.products-grid-container .product-item .product-preview-img {
-    max-width: 100%;
-    height: auto;
-    max-height: 80px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border-radius: 3px;
-    border: 1px solid #eee;
-    display: block;
-    align-self: center;
-}
-
-/* Layout wrapper for Edit/Remove buttons in filled product cell */
-.product-item-actions {
-    margin-top: auto; /* Push to bottom */
-    padding-top: 10px; /* Space above buttons */
-    display: flex;
-    justify-content: space-around; /* Distribute buttons */
-    width: 100%;
-}
-
-/* Specific sizing/styling for Edit button in product cell */
-.edit-product-btn {
-    padding: 5px 10px;
-    font-size: 0.8em;
-    /* Inherits .button and .button-secondary styles */
-    flex-basis: 45%; /* Example sizing */
-    text-align: center;
-}
-
-/* Adjust remove button positioning *within the grid item* */
-.products-grid-container .product-item .remove-item-btn {
-    position: static; /* Override absolute positioning */
-    /* Inherits .button and .button-danger styles */
-    padding: 5px 10px; /* Match edit button size */
-    font-size: 0.8em;  /* Match edit button size */
-    line-height: normal; /* Override line-height if needed */
-    flex-basis: 45%; /* Example sizing */
-    text-align: center;
-}
+/* Content within filled product cell */
+.products-grid-container .product-item .product-display-content { width: 100%; flex-grow: 1; }
+.products-grid-container .product-item .product-display-content h4 { margin-top: 0; margin-bottom: 8px; font-size: 1em; font-weight: 500; color: #2c3e50; border-bottom: none; padding-bottom: 0; }
+.products-grid-container .product-item .product-display-content p { font-size: 0.85em; margin-bottom: 5px; line-height: 1.4; }
+.products-grid-container .product-item .product-preview-img { max-width: 100%; height: auto; max-height: 80px; margin-top: 10px; margin-bottom: 10px; border-radius: 3px; border: 1px solid #eee; display: block; align-self: center; }
+.product-item-actions { margin-top: auto; padding-top: 10px; display: flex; justify-content: space-around; width: 100%; }
+.edit-product-btn { padding: 5px 10px; font-size: 0.8em; flex-basis: 45%; text-align: center; }
+.products-grid-container .product-item .remove-item-btn { position: static; padding: 5px 10px; font-size: 0.8em; line-height: normal; flex-basis: 45%; text-align: center; }
 
 /* --- STYLES FOR EDIT PAGE MODE --- */
+.product-item-actions .edit-product-btn, .products-grid-container .product-item .remove-item-btn { display: none; }
+.form-section[data-editing="true"] .product-item-actions .edit-product-btn, .page-section[data-editing="true"] .product-item-actions .edit-product-btn,
+.form-section[data-editing="true"] .products-grid-container .product-item .remove-item-btn, .page-section[data-editing="true"] .products-grid-container .product-item .remove-item-btn { display: inline-block; }
 
-/* Hide product 'Edit' AND 'Remove' buttons by default */
-.product-item-actions .edit-product-btn,
-.products-grid-container .product-item .remove-item-btn {
-    display: none;
+/* Additional Pages Styling */
+.additional-pages-section { margin-top: 30px; padding-top: 20px; }
+.page-section { margin-top: 20px; padding: 20px; border: 1px solid #007bff; border-radius: 8px; background-color: #f0f8ff; transition: background-color 0.3s ease, border-color 0.3s ease; }
+.page-section[data-editing="false"], .flyer-products-section[data-editing="false"] { background-color: #fff; border-color: #e9ecef; }
+.page-section h3 { font-size: 1.4em; color: #0056b3; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+.page-actions { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: right; display: flex; justify-content: flex-end; }
+.page-actions .edit-save-page-btn { padding: 12px 25px; font-size: 1em; margin-left: 10px; }
+.page-actions .remove-page-btn { padding: 12px 25px; font-size: 1em; margin-left: 10px; position: static; line-height: normal; }
+
+/* Counter Styling */
+#flyerProductCounter, .page-product-counter { font-size: 0.9em; color: #555; margin-top: 10px; text-align: right; }
+
+
+/* =========================================== */
+/* === NEW STYLES FOR ADDED FEATURES START === */
+/* =========================================== */
+
+/* Styles for Feature 3: Flyer Distribution Toggle Boxes */
+.flyer-options-container fieldset {
+    border: 1px solid #ced4da; /* Match input border */
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px; /* Consistent form field spacing */
+    background-color: #f8f9fa; /* Slight background */
+}
+.flyer-options-container legend {
+    padding: 0 10px; /* Space around legend text */
+    font-size: 1.05em; /* Slightly larger than label */
+    color: #495057; /* Match label color */
+    font-weight: 500;
+    width: auto; /* Allow legend to determine its own width */
+}
+.toggle-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* Spacing between toggle options */
+}
+.toggle-option:last-child { margin-bottom: 0; }
+.toggle-option input[type="checkbox"] {
+    margin-right: 10px; /* More space */
+    transform: scale(1.2); /* Larger checkbox */
+    accent-color: #0d6efd; /* Match primary button color */
+    cursor: pointer;
+    width: auto; /* Override general input width */
+    vertical-align: middle; /* Align with label */
+}
+.toggle-option label {
+    font-weight: normal; /* Regular weight for options */
+    font-size: 1em;
+    margin-bottom: 0; /* Remove bottom margin from label itself */
+    color: #343a40; /* Slightly darker text */
+    cursor: pointer;
 }
 
-/* Show product 'Edit' AND 'Remove' buttons ONLY when the parent section is in editing mode */
-.form-section[data-editing="true"] .product-item-actions .edit-product-btn,
-.page-section[data-editing="true"] .product-item-actions .edit-product-btn,
-.form-section[data-editing="true"] .products-grid-container .product-item .remove-item-btn,
-.page-section[data-editing="true"] .products-grid-container .product-item .remove-item-btn {
-    display: inline-block; /* Show the buttons */
+/* Styles for Feature 4: Countdown Timer */
+#flyer-countdown-section {
+    padding: 15px 20px; /* More padding */
+    border-radius: 5px; /* Consistent radius */
+    /* Using inline styles from HTML for background/border */
+}
+#flyer-countdown-section h4 {
+    margin-top: 0; margin-bottom: 10px; color: #343a40; font-size: 1.15em;
+}
+#flyer-countdown-section p {
+    margin-top: 0; margin-bottom: 8px; font-size: 0.95em; color: #495057;
+}
+#countdown-timer-display span {
+    display: inline-block; padding: 5px 10px; margin: 0 4px; background-color: #198754; /* Bootstrap success green */
+    color: white; border-radius: 4px; font-size: 1.05em; min-width: 40px; text-align: center; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+#countdown-timer-display span.expired { background-color: #dc3545; font-weight: bold; }
+
+/* Styles for Manual Discount Description Field (Latest Request) */
+.manual-discount-field { margin-top: 10px; }
+.manual-discount-field label { font-style: italic; color: #0d6efd; }
+.manual-discount-input { background-color: #fff; border-color: #0d6efd; }
+.manual-discount-input:focus { border-color: #86b7fe; outline: 0; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25); }
+
+/* Styles for New Social Media Auto-List */
+.social-list-container {
+    border: 1px solid #e0e0e0; padding: 10px; border-radius: 5px; min-height: 50px; background-color: #f8f9fa;
+}
+.social-list-item {
+    display: flex; align-items: center; background-color: #fff; border: 1px solid #dee2e6; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.social-item-img {
+    width: 40px; height: 40px; object-fit: cover; border-radius: 3px; margin-right: 12px; border: 1px solid #eee; flex-shrink: 0;
+}
+.social-item-no-img {
+    display: inline-block; width: 40px; height: 40px; background-color: #e9ecef; border-radius: 3px; margin-right: 12px; flex-shrink: 0; text-align: center; line-height: 40px; font-size: 0.8em; color: #6c757d;
+}
+.social-item-info { flex-grow: 1; font-size: 0.9em; }
+.social-item-info strong { color: #343a40; }
+.social-item-info small { color: #6c757d; display: block; line-height: 1.3; }
+#socialCounterDisplay { /* Uses existing inline styles, add more if needed */ padding: 5px; border-radius: 3px; transition: background-color 0.3s ease, border 0.3s ease; }
+#socialCounterDisplay.warning { /* Class added via JS when limit exceeded */ color: red !important; background-color: #f8d7da; border: 1px solid red; padding: 8px 10px; font-weight: bold; }
+/* =========================================== */
+/* === NEW STYLES FOR ADDED FEATURES END === */
+/* =========================================== */
+/* --- NEW Styles for Disabled State --- */
+.form-section-disabled {
+    pointer-events: none; /* Prevents clicks, focus, hover */
+    opacity: 0.5;       /* Grey out visually */
+    user-select: none;  /* Prevent text selection */
+    filter: grayscale(50%); /* Optional: further visual cue */
+}
+/* Ensure the currently editing section is NEVER disabled */
+.form-section[data-editing="true"].form-section-disabled,
+.page-section[data-editing="true"].form-section-disabled {
+     pointer-events: auto;
+     opacity: 1;
+     user-select: auto;
+     filter: none;
+}
+/* Also ensure the action buttons within the active section are clickable */
+.form-section[data-editing="true"] .page-actions .button,
+.page-section[data-editing="true"] .page-actions .button {
+     pointer-events: auto; /* Make sure save/remove page buttons are clickable */
 }
 
-/* Styling for the section containing dynamically added pages */
-.additional-pages-section {
-    margin-top: 30px;
-    padding-top: 20px;
-}
-
-/* Styling for each new page section */
-.page-section {
-    margin-top: 20px;
-    padding: 20px;
-    border: 1px solid #007bff; /* Blue border for new pages */
-    border-radius: 8px;
-    background-color: #f0f8ff; /* Light blue background for new pages */
-    transition: background-color 0.3s ease, border-color 0.3s ease; /* Smooth transition */
-}
-
-/* Optional: Slightly different style when page is NOT being edited */
-.page-section[data-editing="false"],
-.flyer-products-section[data-editing="false"] {
-    background-color: #fff; /* Change background when not editing */
-    border-color: #e9ecef; /* Lighter border when not editing */
-}
-.page-section[data-editing="false"] h3,
-.flyer-products-section[data-editing="false"] h2 {
-     /* border-bottom-color: #ccc; /* Less prominent border */
-}
-
-
-.page-section h3 { /* The .page-title class in the template */
-    font-size: 1.4em;
-    color: #0056b3;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-}
-
-/* Container for buttons below dynamic page grids */
-.page-actions {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee; /* Optional separator line */
-    text-align: right; /* Align buttons to the right */
-    display: flex; /* Use flexbox for alignment */
-    justify-content: flex-end; /* Align buttons to the right */
-}
-
-/* Style for the Edit/Save Page toggle button */
-.page-actions .edit-save-page-btn {
-    /* Inherits .button and .button-secondary/primary styles */
-    padding: 12px 25px; /* Restore default button padding */
-    font-size: 1em; /* Restore default button font size */
-    margin-left: 10px; /* Space between buttons */
-}
-
-/* Style for the moved Remove Page button */
-.page-actions .remove-page-btn {
-    /* Inherits .button and .button-danger styles */
-    padding: 12px 25px; /* Restore default button padding */
-    font-size: 1em; /* Restore default button font size */
-    margin-left: 10px; /* Space between buttons */
-    position: static; /* Ensure it's not absolutely positioned */
-    line-height: normal; /* Ensure text is centered */
-}
-
-
-/* Counter styling for flyer and new pages */
-#flyerProductCounter, .page-product-counter {
-    font-size: 0.9em;
-    color: #555;
-    margin-top: 10px; /* Add some space below the grid */
-    text-align: right;
+/* Style disabled buttons explicitly */
+.button.form-section-disabled {
+     pointer-events: none;
+     opacity: 0.5;
+     filter: grayscale(50%);
 }
