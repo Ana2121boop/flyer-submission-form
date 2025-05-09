@@ -8,7 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-</head>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    </head>
 <body>
 
     <div class="form-container">
@@ -99,7 +102,18 @@
     </template>
     <div id="productEditModal" class="modal-overlay"><div class="modal-box product-edit-modal-box"><button type="button" id="productEditCloseBtn" class="modal-close-btn" title="Close">&times;</button><h2>Add/Edit Product</h2><div id="productEditArea" class="product-edit-container"><div id="productFormFieldsContainer"></div><div class="product-edit-actions"><button type="button" id="saveProductBtn" class="button button-primary">Save Product</button><button type="button" id="cancelProductBtn" class="button button-secondary">Cancel</button></div><p id="productEditError" class="error-message" style="display: none;"></p></div></div></div>
     <div id="successModal" class="modal-overlay"><div class="modal-box"><button type="button" id="modalCloseBtn" class="modal-close-btn" title="Close">&times;</button><h2>Success!</h2><p id="modalMessage">Your action was successful.</p></div></div>
-    <div id="submissionDetailModal" class="modal-overlay"><div class="modal-box" style="text-align: left; max-width: 700px;"><button type="button" id="submissionDetailCloseBtn" class="modal-close-btn" title="Close">&times;</button><h2>Submission Details</h2><div id="submissionDetailContent"><p>Loading details...</p></div></div></div>
+    
+    <div id="submissionDetailModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: left; max-width: 700px; position: relative;"> 
+            <button type="button" id="submissionDetailCloseBtn" class="modal-close-btn" title="Close">&times;</button>
+            <button type="button" id="extractPdfBtn" class="button button-danger">Extract as PDF</button>
+            <h2>Submission Details</h2>
+            <div id="submissionDetailContent">
+                <p>Loading details...</p>
+            </div>
+        </div>
+    </div>
+
     <div id="forceSaveModal" class="modal-overlay"><div class="modal-box force-save-modal-box"><button type="button" class="modal-close-btn force-save-close-btn" title="Close">&times;</button><h2 style="color: #dc3545;">Unsaved Changes</h2><p>Please save changes to the current page section before proceeding.</p><div class="force-save-actions" style="margin-top: 25px;"><button type="button" id="forceSaveBtn" class="button button-primary">Save Page Now</button><button type="button" id="forceSaveCancelBtn" class="button button-secondary">Back to Edit</button></div></div></div>
     <script src="script.js"></script>
 </body>
