@@ -3,225 +3,733 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flyer Submission Form</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Flyer Submission UI - Enhanced with Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
+    <script>
+        // Configure TailwindCSS with your custom colors and font
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-blue': '#26408F',    // Deep professional blue
+                        'brand-red': '#ED1C2B',     // Accent red
+                        'brand-neutral-bg': '#F7F7F7',// Neutral background for the page
+                        'brand-neutral-border': '#E5E7EB', // Neutral borders for inputs etc.
+                        'brand-light-gray': '#F3F4F6',   // For backgrounds like product card image area
+                        'brand-dark-gray': '#374151',    // For primary text
+                        'brand-medium-gray': '#6B7280', // For secondary text
+                        'brand-green': '#10B981',      // For success indicators like checkmarks
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'], // Set Inter as the default sans-serif font
+                    },
+                    boxShadow: {
+                        // Enhanced shadows for cards
+                        'card': '0 6px 15px -3px rgba(0,0,0,0.1), 0 4px 8px -4px rgba(0,0,0,0.07)',
+                        'card-hover': '0 12px 25px -5px rgba(0,0,0,0.15), 0 8px 15px -6px rgba(0,0,0,0.1)',
+                        'focus-glow-blue': '0 0 8px 2px rgba(38, 64, 143, 0.5)', 
+                        'hover-glow-blue': '0 0 8px 2px rgba(38, 64, 143, 0.4)', 
+                        'fancy-btn-shadow': '0 4px 12px rgba(38, 64, 143, 0.2), 0 2px 6px rgba(38, 64, 143, 0.15)',
+                        'fancy-card-shadow': '0 10px 25px rgba(0, 0, 0, 0.08), 0 5px 10px rgba(0, 0, 0, 0.04)',
+                        'input-focus-glow': '0 0 0 3px rgba(38, 64, 143, 0.25)',
+                    },
+                    spacing: { 
+                        'header-h': '4.5rem', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --fancy-transition-duration: 0.2s;
+            --fancy-transition-timing: ease-out;
+            --brand-blue-rgb: 38, 64, 143;
+            --brand-red-rgb: 237, 28, 43;
+            --glow-color-blue-strong: rgba(var(--brand-blue-rgb), 0.6); /* For buttons, interactive elements */
+            --glow-color-blue-soft: rgba(var(--brand-blue-rgb), 0.35); /* For input fields */
+            --glow-color-blue-hover: rgba(var(--brand-blue-rgb), 0.5); 
+        }
 
-    </head>
-<body>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    <div class="form-container">
-        <h1>Flyer Submission</h1>
+        /* General focus for non-input elements (buttons, links, etc.) */
+        *:focus-visible:where(:not(input):not(textarea):not(select)) {
+            outline: none !important;
+            box-shadow: 0 0 8px 2px var(--glow-color-blue-strong) !important; 
+            transition: box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing);
+        }
+        
+        /* Specific focus for input fields - aiming for a softer glow */
+        input[type="text"]:focus-visible,
+        input[type="password"]:focus-visible,
+        input[type="date"]:focus-visible,
+        input[type="number"]:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            outline: none !important;
+            border-color: var(--tw-color-brand-blue) !important; 
+            box-shadow: 0 0 6px 0px var(--glow-color-blue-soft) !important; 
+            transition: border-color var(--fancy-transition-duration) var(--fancy-transition-timing),
+                        box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing);
+        }
 
-        <form id="flyerForm" novalidate>
-            <section class="form-section">
-                <h2>Store & Submission Details</h2>
-                <div class="grid two-col">
-                    <div class="form-field"><label for="storeNameInput">Store Name:*</label><input type="text" id="storeNameInput" name="storeNameInput" required placeholder="Enter store name"></div>
-                    <div class="form-field"><label for="submittedByInput">Submitted By:*</label><input type="text" id="submittedByInput" name="submittedByInput" required placeholder="Enter your name"></div>
-                </div>
-                <div class="grid two-col" style="margin-top: 15px;"><div class="info-field"><strong>Submission Date:</strong> <span id="submissionDate">--</span></div><div class="info-field"><strong>Last Updated:</strong> <span id="lastUpdated">--</span></div></div>
-                <div id="flyer-countdown-section" style="margin-top: 15px; margin-bottom: 15px; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f9f9f9;"><h4>Flyer Readiness Estimate:</h4><p>Your flyer should be ready by approximately: <strong id="flyer-deadline-date-display">Calculating...</strong></p><div id="countdown-timer-display" style="font-size: 1.1em; font-weight: bold; margin-top: 5px;"></div></div>
-                <div class="grid two-col" style="margin-top: 15px;"><div class="form-field"><label for="flyerValidStartDate">Flyer Valid Start Date:*</label><input type="date" id="flyerValidStartDate" name="flyerValidStartDate" required></div><div class="form-field"><label for="flyerValidEndDate">Flyer Valid End Date:*</label><input type="date" id="flyerValidEndDate" name="flyerValidEndDate" required></div></div>
-                <div class="flyer-options-container" style="margin-top: 15px; margin-bottom: 15px;"><fieldset><legend style="font-weight: bold; margin-bottom: 5px;">Flyer Distribution Options:</legend><div class="toggle-option"><input type="checkbox" id="canadaPostFlyer" name="canadaPostFlyer" value="yes"><label for="canadaPostFlyer">Canada Post Flyer</label></div><div class="toggle-option" style="margin-top: 5px;"><input type="checkbox" id="digitalInStoreFlyer" name="digitalInStoreFlyer" value="yes"><label for="digitalInStoreFlyer">Digital / In-Store Flyer</label></div></fieldset></div>
-                <div class="form-field" style="margin-top: 15px;"><label for="generalNotes">General Notes:</label><textarea id="generalNotes" name="generalNotes" rows="4" placeholder="Any overall comments or instructions..."></textarea></div>
-            </section>
+        .selectable-item { transition: box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing), transform var(--fancy-transition-duration) var(--fancy-transition-timing), background-color var(--fancy-transition-duration) var(--fancy-transition-timing); }
+        .selectable-item:hover {
+            box-shadow: 0 0 8px 1px var(--glow-color-blue-hover); 
+            transform: scale(1.015);
+        }
+        button.selectable-item:hover, a.selectable-item:hover { transform: scale(1.015) translateY(-2px); }
 
-            <section class="form-section flyer-products-section" data-editing="true" data-dirty="false">
-                <h2>Flyer Products (Page 1 - Max 8 Slots)</h2>
-                <p class="save-reminder-note error-message" style="display: none; font-weight: bold;">Please save changes to this page before proceeding.</p>
-                <div id="flyerProductsGrid" class="products-grid-container four-columns"></div>
-                <p id="flyerProductCounter" style="margin-top:10px; text-align: right;">Slots Filled: 0 / 8</p>
-                <div class="page-actions"><button type="button" id="editSaveFlyerBtn" class="edit-save-page-btn button button-primary" data-mode="save">Save Page</button></div>
-                <p id="productSubmitError" class="error-message" style="display: none;">At least one product is required.</p>
-            </section>
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; transition: opacity var(--fancy-transition-duration) var(--fancy-transition-timing); }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
-            <section class="form-section additional-pages-section">
-                <div id="additionalPagesContainer">
+        input[type="text"], input[type="password"], input[type="date"], input[type="number"], textarea, select {
+            transition: border-color var(--fancy-transition-duration) var(--fancy-transition-timing), 
+                        box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing);
+        }
+
+        .add-product-slot.disabled-slot { opacity: 0.5; cursor: not-allowed; pointer-events: none; background-color: #f9fafb; }
+        .add-product-slot.disabled-slot svg, .add-product-slot.disabled-slot span { color: #9ca3af; }
+
+        .sticky-sidebar-content { max-height: calc(100vh - theme(spacing.header-h) - 2rem - 2rem); overflow-y: auto; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f7f7f7; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; } 
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        .btn-fancy { position: relative; overflow: hidden; transition: transform var(--fancy-transition-duration) var(--fancy-transition-timing), box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing), background-color var(--fancy-transition-duration) var(--fancy-transition-timing), background-image var(--fancy-transition-duration) var(--fancy-transition-timing); }
+        .btn-fancy:hover, .btn-fancy:focus-visible { transform: translateY(-3px); box-shadow: var(--tw-shadow-fancy-btn-shadow); }
+        .btn-fancy.bg-brand-blue:hover, .btn-fancy.bg-brand-blue:focus-visible { background-image: linear-gradient(to right, var(--tw-color-brand-blue), #3255a8); }
+        .btn-fancy.bg-brand-red:hover, .btn-fancy.bg-brand-red:focus-visible { background-image: linear-gradient(to right, var(--tw-color-brand-red), #d41725); }
+        .btn-fancy.border-brand-blue:hover, .btn-fancy.border-brand-blue:focus-visible { background-color: rgba(var(--brand-blue-rgb), 0.08); }
+        .btn-fancy.border-brand-red:hover, .btn-fancy.border-brand-red:focus-visible { background-color: rgba(var(--brand-red-rgb), 0.08); }
+
+        .fancy-card { border: 1px solid rgba(0,0,0,0.05); box-shadow: var(--tw-shadow-fancy-card-shadow) !important; transition: box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing); }
+        .fancy-card:hover { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 8px 15px rgba(0, 0, 0, 0.06) !important; }
+
+        .step-item { transition: background-color var(--fancy-transition-duration) var(--fancy-transition-timing), border-color var(--fancy-transition-duration) var(--fancy-transition-timing), transform var(--fancy-transition-duration) var(--fancy-transition-timing); padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .step-item:hover { background-color: rgba(var(--brand-blue-rgb), 0.03); transform: translateY(-2px); }
+        
+        fieldset label.flex { padding: 0.5rem 0.75rem; border-radius: theme('borderRadius.lg'); transition: background-color var(--fancy-transition-duration) var(--fancy-transition-timing), box-shadow var(--fancy-transition-duration) var(--fancy-transition-timing); }
+        fieldset label.flex:hover { background-color: rgba(var(--brand-blue-rgb), 0.05); }
+
+        .timer-segment span:first-child { transition: color var(--fancy-transition-duration) ease-in-out; }
+        #flyer-readiness-container:hover .timer-segment span:first-child { color: var(--tw-color-brand-red); }
+
+        /* Product card specific shadow (can override Tailwind config if needed, or use config) */
+        .product-card {
+            /* box-shadow: 0 6px 12px -3px rgba(0,0,0,0.1), 0 4px 8px -4px rgba(0,0,0,0.07); */ /* Example more prominent shadow */
+        }
+        .product-card:hover {
+            /* box-shadow: 0 12px 24px -6px rgba(0,0,0,0.15), 0 8px 16px -8px rgba(0,0,0,0.1); */ /* Example more prominent hover shadow */
+        }
+
+
+    </style>
+</head>
+<body class="bg-brand-neutral-bg font-sans text-brand-dark-gray antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-30 border-b border-brand-neutral-border fancy-card">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <nav aria-label="Progress" id="mainAppNavigation" class="flex-grow">
+                <ol role="list" class="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
+                    <li class="flex-1">
+                        <a href="#" id="step-store-info" class="step-item group flex flex-col sm:flex-row items-center text-center sm:text-left border-b-4 border-brand-blue transition-colors duration-150" aria-current="step">
+                            <span class="text-xs sm:text-sm font-bold text-brand-blue">Step 1</span>
+                            <span class="text-xs sm:text-sm font-medium text-brand-blue mt-1 sm:mt-0 sm:ml-2">Store Info</span>
+                        </a>
+                    </li>
+                    <li class="text-gray-400 hidden sm:block px-1" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    </li>
+                    <li class="flex-1">
+                        <a href="#" id="step-add-products" class="step-item group flex flex-col sm:flex-row items-center text-center sm:text-left border-b-4 border-transparent hover:border-gray-300 transition-colors duration-150">
+                            <span class="text-xs sm:text-sm font-medium text-gray-400 group-hover:text-gray-700">Step 2</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-400 group-hover:text-gray-700 mt-1 sm:mt-0 sm:ml-2">Add Products</span>
+                        </a>
+                    </li>
+                     <li class="text-gray-400 hidden sm:block px-1" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    </li>
+                    <li class="flex-1">
+                        <a href="#" id="step-social-print" class="step-item group flex flex-col sm:flex-row items-center text-center sm:text-left border-b-4 border-transparent hover:border-gray-300 transition-colors duration-150">
+                            <span class="text-xs sm:text-sm font-medium text-gray-400 group-hover:text-gray-700">Step 3</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-400 group-hover:text-gray-700 mt-1 sm:mt-0 sm:ml-2">Social/Print</span>
+                        </a>
+                    </li>
+                     <li class="text-gray-400 hidden sm:block px-1" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    </li>
+                    <li class="flex-1">
+                        <a href="#" id="step-review" class="step-item group flex flex-col sm:flex-row items-center text-center sm:text-left border-b-4 border-transparent hover:border-gray-300 transition-colors duration-150">
+                            <span class="text-xs sm:text-sm font-medium text-gray-400 group-hover:text-gray-700">Step 4</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-400 group-hover:text-gray-700 mt-1 sm:mt-0 sm:ml-2">Review</span>
+                        </a>
+                    </li>
+                </ol>
+            </nav>
+            <button id="showAdminLoginBtn" type="button" class="btn-fancy ml-4 px-3 py-2 text-xs sm:text-sm font-medium text-brand-blue hover:text-brand-red rounded-md hover:bg-red-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-brand-red">
+                Admin Panel
+            </button>
+        </div>
+    </header>
+
+    <div id="flyerSubmissionFormContainer" class="container mx-auto px-4 py-6">
+        <div id="mainLayoutColumns" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            
+            <aside class="md:col-span-3">
+                <div class="bg-white p-6 rounded-2xl shadow-lg sticky top-[calc(theme(spacing.header-h)+1.5rem)] flex flex-col fancy-card"> 
+                    <div class="flex-grow sticky-sidebar-content pr-1 custom-scrollbar">
+                        <h2 class="text-xl font-semibold text-brand-dark-gray mb-6">Store Information</h2>
+                        <form id="storeInfoForm" class="space-y-5">
+                            <div>
+                                <label for="storeName" class="block text-sm font-medium text-brand-medium-gray mb-1">Store Name*</label>
+                                <input type="text" name="storeName" id="storeName" placeholder="Enter store name"
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="submittedBy" class="block text-sm font-medium text-brand-medium-gray mb-1">Submitted By*</label>
+                                <input type="text" name="submittedBy" id="submittedBy" placeholder="Enter your name"
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="startDate" class="block text-sm font-medium text-brand-medium-gray mb-1">Start Date*</label>
+                                    <input type="date" name="startDate" id="startDate"
+                                           class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm text-brand-medium-gray">
+                                </div>
+                                <div>
+                                    <label for="endDate" class="block text-sm font-medium text-brand-medium-gray mb-1">End Date*</label>
+                                    <input type="date" name="endDate" id="endDate"
+                                           class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm text-brand-medium-gray">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="notes" class="block text-sm font-medium text-brand-medium-gray mb-1">Notes</label>
+                                <textarea id="notes" name="notes" rows="3" placeholder="Any overall comments or instructions..."
+                                          class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm"></textarea>
+                            </div>
+                            <fieldset class="pt-3 space-y-1"> <legend class="text-sm font-medium text-brand-medium-gray mb-1">Flyer Distribution</legend>
+                                <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                                    <input type="checkbox" id="toggleCanadaPostFlyer" name="toggleCanadaPostFlyer" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                                    Include in Canada Post Flyer
+                                </label>
+                                <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                                    <input type="checkbox" id="toggleDigitalFlyer" name="toggleDigitalFlyer" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                                    Include in Digital Flyer
+                                </label>
+                            </fieldset>
+                            
+                            <div class="mt-8 pt-6 border-t border-brand-neutral-border">
+                                <h3 class="text-md font-semibold text-brand-dark-gray mb-3">Flyer Production Timeline</h3>
+                                <div id="flyer-readiness-container" class="p-5 border border-blue-200 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 space-y-4 shadow-md">
+                                    <div class="flex items-center text-brand-dark-gray">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-brand-blue flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="text-sm font-medium">Estimated Ready By:</span>
+                                        <strong id="flyer-deadline-date-display" class="text-brand-blue font-semibold ml-1.5 text-left">Calculating...</strong>
+                                    </div>
+                            
+                                    <div id="countdown-timer-display" class="flex justify-around space-x-1 sm:space-x-2 text-center">
+                                        <div class="timer-segment bg-white/80 backdrop-blur-sm p-2.5 rounded-lg shadow-sm w-full">
+                                            <span class="block text-xl sm:text-2xl font-bold text-brand-blue tabular-nums" id="days">--</span>
+                                            <span class="block text-[0.6rem] sm:text-xs text-brand-medium-gray uppercase tracking-wider">Days</span>
+                                        </div>
+                                        <div class="timer-segment bg-white/80 backdrop-blur-sm p-2.5 rounded-lg shadow-sm w-full">
+                                            <span class="block text-xl sm:text-2xl font-bold text-brand-blue tabular-nums" id="hours">--</span>
+                                            <span class="block text-[0.6rem] sm:text-xs text-brand-medium-gray uppercase tracking-wider">Hours</span>
+                                        </div>
+                                        <div class="timer-segment bg-white/80 backdrop-blur-sm p-2.5 rounded-lg shadow-sm w-full">
+                                            <span class="block text-xl sm:text-2xl font-bold text-brand-blue tabular-nums" id="minutes">--</span>
+                                            <span class="block text-[0.6rem] sm:text-xs text-brand-medium-gray uppercase tracking-wider">Min</span>
+                                        </div>
+                                        <div class="timer-segment bg-white/80 backdrop-blur-sm p-2.5 rounded-lg shadow-sm w-full">
+                                            <span class="block text-xl sm:text-2xl font-bold text-brand-blue tabular-nums" id="seconds">--</span>
+                                            <span class="block text-[0.6rem] sm:text-xs text-brand-medium-gray uppercase tracking-wider">Sec</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                <div class="additional-pages-controls" style="text-align: center; margin: 20px 0 30px 0;">
-                    <button type="button" id="addNewPageBtn" class="button button-secondary">Add New Page (4x4 Grid)</button>
-                </div>
-            </section>
-
-            <section class="form-section" id="socialMediaSection">
-                <h2>Social Media Promotion (Max 7)</h2>
-                <p id="socialCounterDisplay" style="font-weight: bold; margin-bottom: 15px;">Items selected: 0 / 7</p>
-                <div id="socialItemsList" class="social-list-container">
+                    <div class="mt-auto pt-6 border-t border-brand-neutral-border">
+                        <button type="button" id="nextStepStoreInfoBtn"
+                                class="btn-fancy w-full bg-brand-blue text-white px-6 py-3 rounded-lg shadow-md hover:bg-opacity-90 focus:outline-none font-semibold transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Next: Add Products &rarr;
+                        </button>
                     </div>
-            </section>
-
-            <section class="form-section">
-                <h2>Print Marketing Requests</h2>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" id="reqPriceTags" name="reqPriceTags"> Price Tags</label>
-                    <label><input type="checkbox" id="reqPosters" name="reqPosters"> Posters</label>
-                    <label><input type="checkbox" id="reqSignage" name="reqSignage"> In-Store Signage / Banners</label>
                 </div>
-                <div class="form-field">
-                    <label for="printNotes">Notes for Print Team:</label>
-                    <textarea id="printNotes" name="printNotes" rows="3" placeholder="Specific quantities, sizes, or instructions..."></textarea>
-                </div>
-            </section>
+            </aside>
 
-            <div class="submit-container">
-                <p id="formError" class="error-message" style="display: none;"></p>
-                <button type="submit" id="submitBtn" class="button button-primary">Submit Flyer</button>
+            <main class="md:col-span-6 flex flex-col">
+                <div class="bg-white p-6 rounded-2xl shadow-lg flex-grow flex flex-col fancy-card">
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between border-b border-brand-neutral-border pb-3">
+                            <div class="flex space-x-1 sm:space-x-2 overflow-x-auto pb-1 custom-scrollbar" id="pageTabsContainer">
+                                </div>
+                        </div>
+                    </div>
+
+                    <div id="productGridArea" class="flex-grow overflow-y-auto pr-2 -mr-2 custom-scrollbar">
+                        </div>
+
+                    <div class="mt-auto pt-6 border-t border-brand-neutral-border flex flex-col space-y-3">
+                        <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-3">
+                             <button type="button" id="addPageToolbarBtn" title="Add New Page"
+                                     class="btn-fancy flex-1 sm:flex-initial px-6 py-2.5 text-sm font-medium border border-brand-blue text-brand-blue hover:bg-blue-50 rounded-lg focus:outline-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed selectable-item">
+                                 Add New Page
+                             </button>
+                            <button type="button" id="removePageToolbarBtn" title="Remove Current Page"
+                                    class="btn-fancy flex-1 sm:flex-initial px-6 py-2.5 text-sm font-medium border border-brand-red text-brand-red hover:bg-red-50 rounded-lg focus:outline-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed selectable-item">
+                                Remove Current Page
+                            </button>
+                        </div>
+                        <button type="button" id="nextStepAddProductsBtn"
+                                class="btn-fancy w-full bg-brand-blue text-white px-6 py-3 rounded-lg shadow-md hover:bg-opacity-90 focus:outline-none font-semibold transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Next: Social & Print Options &rarr;
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="md:col-span-3">
+                <div class="bg-white p-6 rounded-2xl shadow-lg sticky top-[calc(theme(spacing.header-h)+1.5rem)] flex flex-col fancy-card">
+                    <div class="flex-grow space-y-6 sticky-sidebar-content pr-1 custom-scrollbar">
+                        <div id="socialMediaCard" class="border border-brand-neutral-border rounded-xl p-4 fancy-card">
+                            <h3 class="text-md font-semibold text-brand-dark-gray mb-3">Social Media Selection</h3>
+                            <div class="flex justify-between items-center mb-1">
+                                <span id="socialCounterDisplay" class="text-sm text-brand-medium-gray">0/7 selected</span>
+                                <span class="text-xs text-gray-400">(Max <span id="maxSocialProductsDisplay">7</span>)</span>
+                            </div>
+                             <p class="text-xs text-brand-medium-gray mb-2">Products selected for social media:</p>
+                            <div id="socialSelectedBadges" class="flex flex-wrap gap-2 mb-3 min-h-[48px] bg-gray-50 p-2.5 rounded-md border border-gray-200">
+                                <p class="text-xs text-gray-400 italic self-center">No products marked for social media yet.</p>
+                            </div>
+                            <div id="socialEligibleProductsList" class="space-y-1 max-h-24 overflow-y-auto mb-3 pr-1 hidden">
+                                <p class="text-xs text-gray-400 italic">Mark products for social media in the product form.</p>
+                            </div>
+                        </div>
+
+                        <div id="printMaterialCard" class="border border-brand-neutral-border rounded-xl p-4 fancy-card">
+                            <h3 class="text-md font-semibold text-brand-dark-gray mb-3">Print Material Requests</h3>
+                            <fieldset class="space-y-1 mb-3"> <legend class="sr-only">Print Material Options</legend>
+                                <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                                    <input type="checkbox" name="reqPriceTags" id="reqPriceTags" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                                    Price Tags
+                                </label>
+                                <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                                    <input type="checkbox" name="reqPosters" id="reqPosters" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                                    Posters
+                                </label>
+                                <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                                    <input type="checkbox" name="reqBanners" id="reqBanners" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                                    In-store Banners
+                                </label>
+                            </fieldset>
+                            <div>
+                                <label for="printNotes" class="block text-xs font-medium text-brand-medium-gray mb-1">Optional Notes (sizes, quantities, etc.)</label>
+                                <textarea id="printNotes" name="printNotes" rows="2" placeholder="Specifics for print team..."
+                                          class="block w-full text-sm border-brand-neutral-border rounded-lg shadow-sm py-2 px-3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto pt-6 border-t border-brand-neutral-border">
+                        <button type="button" id="reviewSubmitBtn"
+                                class="btn-fancy w-full bg-brand-blue text-white px-6 py-3 rounded-lg shadow-md hover:bg-opacity-90 font-semibold transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Review & Submit Flyer &rarr; 
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <section id="reviewSection" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mt-6 fancy-card" style="display: none;" aria-labelledby="reviewSectionTitle">
+            <div class="mb-8 text-center">
+                <h2 id="reviewSectionTitle" class="text-2xl md:text-3xl font-bold text-brand-blue">Review Your Flyer Submission</h2>
+                <p class="text-brand-medium-gray mt-2">Please review all details carefully before final submission.</p>
             </div>
-        </form>
-
-        <section id="adminSection" style="display: none; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc;">
-            <div id="adminLogin">
-                <h2>Admin Login</h2>
-                <form id="adminLoginForm" novalidate>
-                    <div class="form-field"><label for="adminUsername">Username:</label><input type="text" id="adminUsername" name="adminUsername" required></div>
-                    <div class="form-field"><label for="adminPassword">Password:</label><input type="password" id="adminPassword" name="adminPassword" required></div>
-                    <button type="submit" class="button button-primary">Login</button>
-                    <p id="adminLoginError" class="error-message" style="display: none;"></p>
-                </form>
+        
+            <div class="mb-8 p-6 border border-brand-neutral-border rounded-xl bg-gray-50/50 fancy-card">
+                <h3 class="text-xl font-semibold text-brand-dark-gray mb-4">Store Information</h3>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-brand-medium-gray">Store Name:</dt>
+                        <dd id="reviewStoreName" class="text-brand-dark-gray mt-0.5"></dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-brand-medium-gray">Submitted By:</dt>
+                        <dd id="reviewSubmittedBy" class="text-brand-dark-gray mt-0.5"></dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-brand-medium-gray">Start Date:</dt>
+                        <dd id="reviewStartDate" class="text-brand-dark-gray mt-0.5"></dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-brand-medium-gray">End Date:</dt>
+                        <dd id="reviewEndDate" class="text-brand-dark-gray mt-0.5"></dd>
+                    </div>
+                     <div class="sm:col-span-1">
+                        <dt class="font-medium text-brand-medium-gray">Canada Post Flyer:</dt>
+                        <dd id="reviewCanadaPostFlyer" class="text-brand-dark-gray mt-0.5"></dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-brand-medium-gray">Digital Flyer:</dt>
+                        <dd id="reviewDigitalFlyer" class="text-brand-dark-gray mt-0.5"></dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="font-medium text-brand-medium-gray">Notes:</dt>
+                        <dd id="reviewNotes" class="text-brand-dark-gray mt-0.5 whitespace-pre-wrap font-sans"></dd>
+                    </div>
+                </dl>
             </div>
-            <div id="adminDashboard" style="display: none;">
-                <h2>Admin Dashboard</h2>
-                <p id="adminGreeting" style="font-style: italic; margin-bottom: 15px; color: #0056b3;"></p>
-                
-                <button id="adminLogoutBtn" class="button button-secondary" style="float: right;">Logout</button>
-                <div style="clear: both; margin-bottom: 20px;"></div>
-
-
-                <div id="adminFilters" class="form-section" style="padding:15px; border:1px solid #ddd; margin-bottom:20px; background-color:#f9f9f9; border-radius: 5px;">
-                    <h3>Filter Submissions</h3>
-                    <div class="grid three-col">
-                        <div class="form-field">
-                            <label for="filterDateStart">Submitted After:</label>
-                            <input type="date" id="filterDateStart" name="filterDateStart">
-                        </div>
-                        <div class="form-field">
-                            <label for="filterDateEnd">Submitted Before:</label>
-                            <input type="date" id="filterDateEnd" name="filterDateEnd">
-                        </div>
-                        <div class="form-field">
-                            <label for="filterStoreName">Store Name:</label>
-                            <input type="text" id="filterStoreName" name="filterStoreName" placeholder="Enter store name to filter">
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px; text-align: right;">
-                        <button type="button" id="applyFiltersBtn" class="button button-secondary">Apply Filters</button>
-                        <button type="button" id="clearFiltersBtn" class="button button-tertiary">Clear Filters</button>
-                    </div>
+        
+            <div class="mb-8 p-6 border border-brand-neutral-border rounded-xl bg-gray-50/50 fancy-card">
+                <h3 class="text-xl font-semibold text-brand-dark-gray mb-4">Products by Page</h3>
+                <div id="reviewProductPagesContainer" class="space-y-6">
+                    <p class="text-brand-medium-gray italic">Product details will appear here...</p>
                 </div>
-
-                <div style="margin-bottom: 15px;">
-                    <button type="button" id="deleteSelectedSubmissionsBtn" class="button button-danger" style="display: none;">Delete Selected (<span id="selectedSubmissionsCount">0</span>)</button>
+            </div>
+        
+            <div class="mb-8 p-6 border border-brand-neutral-border rounded-xl bg-gray-50/50 fancy-card">
+                <h3 class="text-xl font-semibold text-brand-dark-gray mb-4">Social Media Selections</h3>
+                <div id="reviewSocialMediaList" class="text-sm text-brand-dark-gray space-y-1">
+                     <p class="text-brand-medium-gray italic">Social media selections will appear here...</p>
                 </div>
-                
-                <h3>All Submissions</h3>
-                <div id="adminSubmissionsList"> <p>Loading submissions...</p></div>
+            </div>
+        
+            <div class="mb-8 p-6 border border-brand-neutral-border rounded-xl bg-gray-50/50 fancy-card">
+                <h3 class="text-xl font-semibold text-brand-dark-gray mb-4">Print Material Requests</h3>
+                <dl class="text-sm space-y-2">
+                    <div>
+                        <dt class="font-medium text-brand-medium-gray inline">Price Tags:</dt>
+                        <dd id="reviewReqPriceTags" class="text-brand-dark-gray inline ml-1"></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-brand-medium-gray inline">Posters:</dt>
+                        <dd id="reviewReqPosters" class="text-brand-dark-gray inline ml-1"></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-brand-medium-gray inline">In-store Banners:</dt>
+                        <dd id="reviewReqBanners" class="text-brand-dark-gray inline ml-1"></dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-brand-medium-gray">Print Notes:</dt>
+                        <dd id="reviewPrintNotes" class="text-brand-dark-gray mt-0.5 whitespace-pre-wrap font-sans"></dd>
+                    </div>
+                </dl>
+            </div>
+        
+            <div class="mt-10 pt-6 border-t border-brand-neutral-border flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="editSubmissionBtn" type="button" class="btn-fancy w-full sm:w-auto px-8 py-3 text-sm font-semibold text-brand-blue bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-150 selectable-item">
+                    &larr; Edit Submission
+                </button>
+                <button id="finalSubmitBtn" type="button" class="btn-fancy w-full sm:w-auto px-8 py-3 text-sm font-semibold text-white bg-brand-red hover:bg-opacity-90 rounded-lg shadow-md transition-colors duration-150 selectable-item">
+                    Confirm & Final Submit
+                </button>
             </div>
         </section>
-        <div style="text-align: right; margin-top: 20px; margin-bottom: 20px;">
-            <button id="showAdminLoginBtn" class="button button-tertiary">Admin Access</button>
-        </div>
-    </div> 
+    </div>
 
-    <template id="productFormFieldsTemplate">
-        <div class="grid three-col">
-            <div class="form-field"><label>Product Name:*</label><input type="text" name="productName" required placeholder="e.g., Premium Latex Paint"></div>
-            <div class="form-field"><label>Brand Name:*</label><input type="text" name="brandName" required placeholder="e.g., ColorPro"></div>
-            <div class="form-field"><label>Category:*</label><select name="category" required><option value="" disabled selected>Select...</option><option value="Lumber">Lumber</option><option value="Mouldings">Mouldings</option><option value="Paint">Paint</option><option value="Tools">Tools</option><option value="Hardware">Hardware</option><option value="Other">Other</option></select></div>
-            <div class="form-field"><label>Size/Dimensions:</label><input type="text" name="sizeDimensions" placeholder="e.g., 1 Gallon or 2x4x8"></div>
-            <div class="form-field"><label>Colour/Finish:</label><input type="text" name="colourFinish" placeholder="e.g., Eggshell White"></div>
-            <div class="form-field"><label>Store SKU:</label><input type="text" name="sku" placeholder="Optional product SKU"></div>
-            <div class="form-field"><label>Regular Price:*</label><input type="number" name="regularPrice" step="0.01" min="0" required class="price-input" placeholder="e.g., 45.50"></div>
-            <div class="form-field"><label>Sale Price:*</label><input type="number" name="salePrice" step="0.01" min="0" required class="price-input" placeholder="e.g., 39.99"></div>
-            <div class="form-field"><label>Discount %:</label><input type="text" name="discountPercent" readonly disabled class="discount-display" placeholder="Auto-calculated"></div>
-            <div class="form-field manual-discount-field" style="display: none;"><label>Manual Discount Description:</label><input type="text" name="manualDiscountDescription" class="manual-discount-input" placeholder="e.g., 20% Off MSRP, Staff Discount"></div>
+    <aside id="editProductDrawer"
+           class="fixed inset-y-0 right-0 z-40 w-full max-w-lg transform transition-transform duration-300 ease-in-out translate-x-full bg-white shadow-2xl flex flex-col fancy-card"
+           role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-brand-neutral-border bg-gray-50">
+            <h2 id="drawerTitle" class="text-lg font-semibold text-brand-dark-gray">Edit Product</h2>
+            <button type="button" id="closeDrawerBtn" aria-label="Close product editor"
+                    class="text-gray-400 hover:text-gray-600 rounded-md p-1 -mr-1 focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-        <div class="form-field"><label>Special Features:</label><textarea name="specialFeatures" rows="2" placeholder="e.g., Low VOC, Lifetime Warranty"></textarea></div>
-        <div class="checkbox-group">
-            <label><input type="checkbox" name="isMainFlyerProduct"> Main Flyer Product?</label>
-            <label><input type="checkbox" name="isBundle" class="bundle-checkbox"> Is this a Bundle?</label>
-            <label><input type="checkbox" name="requestStockImage"> Request Stock Image?</label>
-            <label><input type="checkbox" name="includeInSocial" class="social-checkbox"> Include in Social Media?</label>
-        </div>
-        <div class="form-field bundle-items-container" style="display: none;"><label>Additional Items in Bundle:*</label><textarea name="bundleItems" rows="2" placeholder="List items included in the bundle..."></textarea></div>
-        <div class="form-field"><label>Upload Custom Product Image (Optional):</label><input type="file" name="productImage" accept="image/*" class="product-image-input"><div class="image-preview"><small>No image selected.</small></div></div>
-    </template>
-
-    <template id="productDisplayTemplate">
-        <div class="product-item list-item" data-product-id="">
-            <div class="product-display-content"></div><img src="" alt="Product Preview" class="product-preview-img" style="display: none;">
-            <div class="product-item-actions">
-                <button type="button" class="edit-product-btn button button-secondary" title="Edit Product">Edit</button>
-                <button type="button" class="remove-item-btn button-danger" title="Remove Product">&times;</button>
-            </div>
-        </div>
-    </template>
-
-    <template id="newPageSectionTemplate">
-        <div class="page-section" data-editing="true" data-dirty="false">
-            <h3 class="page-title">Page Title Here</h3>
-            <p class="save-reminder-note error-message" style="display: none; font-weight: bold;">Please save changes to this page before proceeding.</p>
-            <div class="products-grid-container four-columns new-page-grid"></div>
-            <p class="page-product-counter" style="margin-top:10px; text-align: right;">Slots Filled: 0 / 16</p>
-            <div class="page-actions">
-                <button type="button" class="edit-save-page-btn button button-primary" data-mode="save">Save Page</button>
-                <button type="button" class="remove-page-btn button button-danger">Remove Page</button>
-            </div>
-        </div>
-    </template>
-
-    <div id="productEditModal" class="modal-overlay">
-        <div class="modal-box product-edit-modal-box">
-            <button type="button" id="productEditCloseBtn" class="modal-close-btn" title="Close">&times;</button>
-            <h2>Add/Edit Product</h2>
-            <div id="productEditArea" class="product-edit-container">
-                <div id="productFormFieldsContainer"></div>
-                <div class="product-edit-actions">
-                    <button type="button" id="saveProductBtn" class="button button-primary">Save Product</button>
-                    <button type="button" id="cancelProductBtn" class="button button-secondary">Cancel</button>
+        <div class="flex-grow p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            <form id="productEditForm" class="space-y-6" novalidate>
+                <fieldset>
+                    <legend class="text-base font-medium text-brand-blue mb-3 pb-1 border-b border-brand-neutral-border w-full">Product Information</legend>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="drawerProductName" class="block text-sm font-medium text-brand-medium-gray mb-1">Product Name*</label>
+                            <input type="text" name="drawerProductName" id="drawerProductName" required placeholder="e.g., Premium Latex Paint"
+                                   class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="drawerBrandName" class="block text-sm font-medium text-brand-medium-gray mb-1">Brand Name*</label>
+                                <input type="text" name="drawerBrandName" id="drawerBrandName" required placeholder="e.g., ColorPro"
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                            </div>
+                            <div>
+                                <label for="drawerSku" class="block text-sm font-medium text-brand-medium-gray mb-1">SKU</label>
+                                <input type="text" name="drawerSku" id="drawerSku" placeholder="Optional product SKU"
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="drawerCategory" class="block text-sm font-medium text-brand-medium-gray mb-1">Category*</label>
+                            <select name="drawerCategory" id="drawerCategory" required
+                                    class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                                <option value="" disabled selected>Select category...</option>
+                                <option value="Lumber">Lumber</option>
+                                <option value="Mouldings">Mouldings</option>
+                                <option value="Paint">Paint</option>
+                                <option value="Tools">Tools</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Seasonal">Seasonal</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Flooring">Flooring</option>
+                                <option value="Kitchen">Kitchen</option>
+                                <option value="Bath">Bath</option>
+                                <option value="Outdoor">Outdoor Living</option>
+                                <option value="Appliances">Appliances</option>
+                                <option value="Building Materials">Building Materials</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend class="text-base font-medium text-brand-blue mb-3 pb-1 border-b border-brand-neutral-border w-full">Product Image</legend>
+                    <div>
+                        <label for="drawerProductImage" class="block text-sm font-medium text-brand-medium-gray mb-1">Upload Custom Image (Optional)</label>
+                        <input type="file" name="drawerProductImage" id="drawerProductImage" accept="image/*"
+                               class="block w-full text-sm text-brand-medium-gray file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-brand-blue hover:file:bg-blue-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+                        <div id="drawerImagePreview" class="mt-2 text-xs text-brand-medium-gray p-2 border border-dashed border-brand-neutral-border rounded-lg min-h-[40px] flex items-center">
+                            <small>No image selected. Recommended: Square, max 5MB.</small>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend class="text-base font-medium text-brand-blue mb-3 pb-1 border-b border-brand-neutral-border w-full">Details</legend>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="drawerDescription" class="block text-sm font-medium text-brand-medium-gray mb-1">Description / Special Features</label>
+                            <textarea name="drawerDescription" id="drawerDescription" rows="3" placeholder="e.g., Low VOC, Lifetime Warranty..."
+                                      class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm"></textarea>
+                        </div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="drawerSizeDimensions" class="block text-sm font-medium text-brand-medium-gray mb-1">Size/Dimensions</label>
+                                <input type="text" name="drawerSizeDimensions" id="drawerSizeDimensions" placeholder="e.g., 1 Gallon or 2x4x8"
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                            </div>
+                            <div>
+                                <label for="drawerColourFinish" class="block text-sm font-medium text-brand-medium-gray mb-1">Colour/Finish</label>
+                                <input type="text" name="drawerColourFinish" id="drawerColourFinish" placeholder="e.g., Eggshell White"
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend class="text-base font-medium text-brand-blue mb-3 pb-1 border-b border-brand-neutral-border w-full">Pricing</legend>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="drawerRegularPrice" class="block text-sm font-medium text-brand-medium-gray mb-1">Regular Price*</label>
+                            <input type="number" name="drawerRegularPrice" id="drawerRegularPrice" step="0.01" min="0" required placeholder="e.g., 45.50"
+                                   class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                        </div>
+                        <div>
+                            <label for="drawerSalePrice" class="block text-sm font-medium text-brand-medium-gray mb-1">Sale Price*</label>
+                            <input type="number" name="drawerSalePrice" id="drawerSalePrice" step="0.01" min="0" required placeholder="e.g., 39.99"
+                                   class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label for="drawerDiscountPercent" class="block text-sm font-medium text-brand-medium-gray mb-1">Discount %</label>
+                        <input type="text" name="drawerDiscountPercent" id="drawerDiscountPercent" readonly disabled placeholder="Auto-calculated"
+                               class="block w-full bg-gray-100 border-gray-300 rounded-lg shadow-sm py-2.5 px-3 text-sm cursor-not-allowed">
+                    </div>
+                     <div class="mt-3" id="drawerManualDiscountField" style="display: none;">
+                        <label for="drawerManualDiscountDescription" class="block text-sm font-medium text-brand-blue mb-1 italic">Manual Discount Description (shows if prices are $0):</label>
+                        <input type="text" name="drawerManualDiscountDescription" id="drawerManualDiscountDescription" placeholder="e.g., 20% Off MSRP, Special Buy"
+                               class="block w-full border-brand-blue rounded-lg shadow-sm py-2.5 px-3 text-sm">
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend class="text-base font-medium text-brand-blue mb-3 pb-1 border-b border-brand-neutral-border w-full">Tags & Options</legend>
+                    <div class="space-y-1"> <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                            <input type="checkbox" name="drawerIsMainFlyerProduct" id="drawerIsMainFlyerProduct" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                            Main Flyer Product?
+                        </label>
+                        <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                            <input type="checkbox" name="drawerIsBundle" id="drawerIsBundleCheckbox" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                            Is this a Bundle?
+                        </label>
+                        <div id="drawerBundleItemsContainer" style="display: none;" class="ml-6 space-y-1 pt-1">
+                             <label for="drawerBundleItems" class="block text-sm font-medium text-brand-medium-gray">Additional Items in Bundle*</label>
+                             <textarea name="drawerBundleItems" id="drawerBundleItems" rows="2" placeholder="List items included in the bundle..."
+                                       class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 text-sm"></textarea>
+                        </div>
+                        <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                            <input type="checkbox" name="drawerRequestStockImage" id="drawerRequestStockImage" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                            Request Stock Image?
+                        </label>
+                        <label class="flex items-center text-sm text-brand-dark-gray cursor-pointer group selectable-item">
+                            <input type="checkbox" name="drawerIncludeInSocial" id="drawerIncludeInSocial" class="h-4 w-4 text-brand-blue border-gray-300 rounded mr-2">
+                            Include in Social Media?
+                        </label>
+                    </div>
+                </fieldset>
+                <div id="drawerErrorMessage" class="text-sm text-brand-red bg-red-50 p-3 rounded-lg" style="display: none;">
                 </div>
-                <p id="productEditError" class="error-message" style="display: none;"></p>
+            </form>
+        </div>
+        <div class="px-6 py-4 border-t border-brand-neutral-border flex justify-end space-x-3 bg-gray-50">
+            <button type="button" id="cancelDrawerBtn"
+                    class="btn-fancy px-5 py-2.5 text-sm font-medium text-brand-dark-gray bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-blue transition-colors duration-150 selectable-item">
+                Cancel
+            </button>
+            <button type="button" id="saveDrawerBtn"
+                    class="btn-fancy px-5 py-2.5 text-sm font-medium text-white bg-brand-blue border border-transparent rounded-lg shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-blue transition-colors duration-150 selectable-item">
+                Save Product
+            </button>
+        </div>
+    </aside>
+
+    <div id="customConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none" aria-labelledby="customConfirmModalTitle" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md transform transition-all duration-300 ease-in-out scale-95 opacity-0 fancy-card">
+            <div class="flex items-start justify-between mb-4">
+                <h2 id="customConfirmModalTitle" class="text-xl font-semibold text-brand-dark-gray">Confirm Action</h2>
+                <button id="customConfirmModalCloseBtn" type="button" class="text-gray-400 hover:text-gray-600 -mt-1 -mr-1 p-1 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" aria-label="Close confirmation dialog">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="customConfirmModalMessage" class="text-brand-medium-gray mb-6 text-sm leading-relaxed">Are you sure you want to proceed with this action?</div>
+            <div class="flex justify-end space-x-3">
+                <button id="customConfirmModalCancelBtn" type="button" class="btn-fancy px-5 py-2.5 text-sm font-medium text-brand-dark-gray bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-blue transition-colors duration-150 selectable-item">
+                    Cancel
+                </button>
+                <button id="customConfirmModalConfirmBtn" type="button" class="btn-fancy px-5 py-2.5 text-sm font-medium text-white bg-brand-red border border-transparent rounded-lg shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-red transition-colors duration-150 selectable-item">
+                    Confirm
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="successModal" class="modal-overlay">
-        <div class="modal-box">
-            <button type="button" id="modalCloseBtn" class="modal-close-btn" title="Close">&times;</button>
-            <h2>Success!</h2>
-            <p id="modalMessage">Your action was successful.</p>
-        </div>
-    </div>
+    <section id="adminSection" class="fixed inset-0 z-[35] bg-brand-neutral-bg p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar" style="display: none;" aria-labelledby="adminPanelTitle">
+        <div class="container mx-auto">
 
-    <div id="submissionDetailModal" class="modal-overlay">
-        <div class="modal-box" style="text-align: left; position: relative;"> <button type="button" id="submissionDetailCloseBtn" class="modal-close-btn" title="Close">&times;</button> <button type="button" id="extractPdfBtn" class="button button-danger">Extract as PDF</button> <h2>Submission Details</h2>
-            <div id="submissionDetailContent">
-                <p>Loading details...</p>
+            <div id="adminLoginDiv" class="max-w-md mx-auto mt-10 sm:mt-20 bg-white p-6 sm:p-8 rounded-2xl shadow-xl fancy-card">
+                <h2 id="adminPanelTitle" class="text-2xl font-bold text-brand-blue mb-6 text-center">Admin Login</h2>
+                <form id="adminLoginForm" class="space-y-6">
+                    <div>
+                        <label for="adminUsername" class="block text-sm font-medium text-brand-medium-gray mb-1">Username</label>
+                        <input type="text" id="adminUsername" name="adminUsername" required
+                               class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="adminPassword" class="block text-sm font-medium text-brand-medium-gray mb-1">Password</label>
+                        <input type="password" id="adminPassword" name="adminPassword" required
+                               class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm">
+                    </div>
+                    <div id="adminLoginError" class="text-sm text-brand-red bg-red-50 p-3 rounded-lg" style="display: none;">
+                        </div>
+                    <div>
+                        <button type="submit"
+                                class="btn-fancy w-full bg-brand-blue text-white px-6 py-3 rounded-lg shadow-md hover:bg-opacity-90 focus:outline-none font-semibold transition-opacity duration-150 selectable-item">
+                            Login
+                        </button>
+                    </div>
+                </form>
+                <button type="button" id="closeAdminPanelBtn" class="btn-fancy mt-4 w-full text-sm text-brand-medium-gray hover:text-brand-blue py-2 selectable-item">
+                    &larr; Back to Flyer Form
+                </button>
+            </div>
+
+            <div id="adminDashboardDiv" style="display: none;">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-brand-neutral-border">
+                    <h1 id="adminGreeting" class="text-2xl sm:text-3xl font-bold text-brand-blue mb-3 sm:mb-0">
+                        Admin Dashboard
+                    </h1>
+                    <button id="adminLogoutBtn" type="button"
+                            class="btn-fancy px-5 py-2.5 text-sm font-medium text-white bg-brand-red border border-transparent rounded-lg shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-red transition-colors duration-150 selectable-item">
+                        Logout
+                    </button>
+                </div>
+
+                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg mb-6 fancy-card">
+                    <h3 class="text-lg font-semibold text-brand-dark-gray mb-4">Filter Submissions</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label for="filterDateStart" class="block text-sm font-medium text-brand-medium-gray mb-1">Flyer Start From:</label>
+                            <input type="date" id="filterDateStart" name="filterDateStart"
+                                   class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm text-brand-medium-gray">
+                        </div>
+                        <div>
+                            <label for="filterDateEnd" class="block text-sm font-medium text-brand-medium-gray mb-1">Flyer Start To:</label>
+                            <input type="date" id="filterDateEnd" name="filterDateEnd"
+                                   class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm text-brand-medium-gray">
+                        </div>
+                        <div>
+                            <label for="filterStoreName" class="block text-sm font-medium text-brand-medium-gray mb-1">Store Name:</label>
+                            <input type="text" id="filterStoreName" name="filterStoreName" placeholder="Enter store name"
+                                   class="block w-full border-brand-neutral-border rounded-lg shadow-sm py-2.5 px-3 sm:text-sm">
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            <button id="applyFiltersBtn" type="button"
+                                    class="btn-fancy flex-1 bg-brand-blue text-white px-4 py-2.5 rounded-lg shadow-sm hover:bg-opacity-90 text-sm font-medium selectable-item">
+                                Apply Filters
+                            </button>
+                            <button id="clearFiltersBtn" type="button"
+                                    class="btn-fancy flex-1 bg-gray-200 text-brand-dark-gray px-4 py-2.5 rounded-lg hover:bg-gray-300 text-sm font-medium selectable-item">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adminSelectedActionsContainer" class="mb-4 flex items-center gap-x-3">
+                     <span id="selectedSubmissionsCount" class="text-sm text-brand-medium-gray">0 selected</span>
+                     <button id="deleteSelectedSubmissionsBtn" type="button" 
+                             class="btn-fancy px-4 py-2 text-sm font-medium text-white bg-brand-red rounded-lg shadow-sm hover:bg-opacity-80 disabled:opacity-50 disabled:cursor-not-allowed opacity-50 cursor-not-allowed selectable-item" disabled>
+                         Delete Selected
+                     </button>
+                </div>
+
+                <div id="adminSubmissionsListContainer" class="bg-white rounded-xl shadow-lg overflow-x-auto fancy-card">
+                    <div id="adminSubmissionsList" class="p-1 sm:p-2 md:p-4 min-w-[700px]">
+                        <p class="text-brand-medium-gray p-4">Loading submissions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="submissionDetailModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none" 
+         aria-labelledby="submissionDetailModalTitleDOM" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="bg-brand-neutral-bg rounded-2xl shadow-xl p-4 sm:p-6 w-full max-w-5xl max-h-[90vh] transform transition-all duration-300 ease-in-out scale-95 opacity-0 flex flex-col fancy-card">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-brand-neutral-border">
+                <h2 id="submissionDetailModalTitleDOM" class="text-xl font-semibold text-brand-blue">Submission Details</h2>
+                <button id="submissionDetailModalCloseBtn" type="button" class="text-gray-400 hover:text-gray-600 p-1 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" aria-label="Close submission details">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div id="submissionDetailContent" class="flex-grow overflow-y-auto space-y-4 custom-scrollbar pr-2 -mr-2 text-sm">
+                <p class="text-brand-medium-gray p-4">Loading details...</p>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-brand-neutral-border flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+                <button id="extractPdfBtn" type="button"
+                        class="btn-fancy px-5 py-2.5 text-sm font-medium text-brand-blue bg-blue-100 border border-transparent rounded-lg shadow-sm hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-blue transition-colors duration-150 selectable-item">
+                    Extract as PDF
+                </button>
+                <button id="submissionDetailModalSecondaryCloseBtn" type="button"
+                        class="btn-fancy px-5 py-2.5 text-sm font-medium text-brand-dark-gray bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-blue transition-colors duration-150 selectable-item">
+                    Close
+                </button>
             </div>
         </div>
     </div>
-
-    <div id="forceSaveModal" class="modal-overlay">
-        <div class="modal-box force-save-modal-box">
-            <button type="button" class="modal-close-btn force-save-close-btn" title="Close">&times;</button>
-            <h2 style="color: #dc3545;">Unsaved Changes</h2>
-            <p>Please save changes to the current page section before proceeding.</p>
-            <div class="force-save-actions" style="margin-top: 25px;">
-                <button type="button" id="forceSaveBtn" class="button button-primary">Save Page Now</button>
-                <button type="button" id="forceSaveCancelBtn" class="button button-secondary">Back to Edit</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
-
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
