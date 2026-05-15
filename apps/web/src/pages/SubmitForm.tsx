@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import ProductsSection, { type Product } from '../components/ProductsSection';
+import FormProgressBar from '../components/FormProgressBar';
 
 const FLYER_SIZES: Array<{ value: 'standard' | '8.5x11'; label: string }> = [
   { value: 'standard', label: 'Standard' },
@@ -81,26 +82,73 @@ export default function SubmitForm() {
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<number | null>(null);
+  const [currentSectionId, setCurrentSectionId] = useState<string>('store');
+  const storeNameRef = useRef<HTMLInputElement>(null);
+  const submittedByRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
   }, [form]);
 
+  // Track which section is in view for the progress bar highlight
+  useEffect(() => {
+    const ids = ['store', 'dates', 'marketing', 'products', 'notes'];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) {
+          const id = visible[0].target.id.replace('section-', '');
+          setCurrentSectionId(id);
+        }
+      },
+      { rootMargin: '-30% 0px -50% 0px', threshold: [0, 0.25, 0.5] },
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(`section-${id}`);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  // If page count drops, reassign products on now-nonexistent pages.
   function updatePageCount(n: number) {
     setForm((f) => ({
       ...f,
       pageCount: n,
-      products: f.products.map((p) => ({
-        ...p,
-        pageNumber: p.pageNumber > n ? n : p.pageNumber,
-      })),
+      products: f.products.map((p) => ({ ...p, pageNumber: p.pageNumber > n ? n : p.pageNumber })),
     }));
   }
+
+  // Section completion status
+  const storeDone = !!form.storeName.trim() && !!form.submittedBy.trim();
+  const datesDone = !!form.flyerStartDate && !!form.flyerEndDate && !!form.flyerSize && !!form.pageCount;
+  const productsDone = form.products.some((p) => p.name.trim().length > 0);
+  const submitDone = storeDone && datesDone && productsDone;
+
+  const steps = [
+    { id: 'store', label: 'Store', done: storeDone },
+    { id: 'dates', label: 'Dates', done: datesDone },
+    { id: 'products', label: 'Products', done: productsDone },
+    { id: 'submit', label: submitDone ? 'Ready!' : 'Submit', done: false },
+  ];
+
+  // Smart submit button hint
+  function getBlocker(): { msg: string; jumpTo: (() => void) | null } | null {
+    if (!form.storeName.trim()) {
+      return { msg: 'Enter your store name first', jumpTo: () => { focusField(storeNameRef); } };
+    }
+    if (!form.submittedBy.trim()) {
+      return { msg: 'Enter your name', jumpTo: () => { focusField(submittedByRef); } };
+    }
+    if (!productsDone) {
+      return { msg: 'Add at least one product', jumpTo: () => { scrollToSection('products'); } };
+    }
+    return null;
+  }
+  const blocker = getBlocker();
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -139,6 +187,7 @@ export default function SubmitForm() {
     onSuccess: (data) => {
       setSubmittedId(data.submissionId);
       localStorage.removeItem(DRAFT_KEY);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     onError: (err) => {
       setSubmitError(err instanceof ApiError ? err.message : 'Submission failed');
@@ -149,9 +198,9 @@ export default function SubmitForm() {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 text-center">
         <div className="text-6xl mb-4">✓</div>
-        <h1 className="text-2xl font-bold mb-2">Submission received!</h1>
+        <h1 className="text-2xl font-bold mb-2">Thanks, your flyer's in!</h1>
         <p className="text-slate-600 mb-1">Submission ID: <span className="font-mono">{submittedId}</span></p>
-        <p className="text-slate-600 mb-6">Head office has it. You can close this page.</p>
+        <p className="text-slate-600 mb-6">Head office got it. You're all done — close this page or start another.</p>
         <button
           type="button"
           onClick={() => { setSubmittedId(null); setForm(emptyForm()); }}
@@ -165,24 +214,40 @@ export default function SubmitForm() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 pb-32">
-      <h1 className="text-2xl font-bold mb-1">Submit a flyer</h1>
-      <p className="text-slate-600 mb-6">Fill out the form below. Your progress is saved on this device as you type.</p>
+      <FormProgressBar steps={steps} currentId={currentSectionId} />
 
-      <Section title="1. Your store" defaultOpen>
+      <h1 className="text-2xl font-bold mb-1">Submit a flyer</h1>
+      <p className="text-slate-600 mb-6">
+        Fill out the sections below — we'll save as you go.
+      </p>
+
+      <Section
+        id="store"
+        title="1. Your store"
+        complete={storeDone}
+        summary={storeDone ? `${form.storeName} · ${form.submittedBy}` : null}
+        defaultOpen
+      >
         <Field label="Store name" required>
-          <input type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)} className={inputCls} placeholder="e.g. Windsor Plywood Surrey" />
+          <input ref={storeNameRef} type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)} className={inputCls} placeholder="e.g. Windsor Plywood Surrey" />
         </Field>
         <Field label="Your name" required>
-          <input type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} />
+          <input ref={submittedByRef} type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} placeholder="So we know who to ask if there's a question" />
         </Field>
         <Field label="Theme / title (optional)" hint='e.g. "Black Friday", "Spring DIY Sale"'>
           <input type="text" value={form.theme} onChange={(e) => update('theme', e.target.value)} className={inputCls} />
         </Field>
       </Section>
 
-      <Section title="2. Flyer details" defaultOpen>
+      <Section
+        id="dates"
+        title="2. Flyer details"
+        complete={datesDone}
+        summary={datesDone ? `${form.flyerStartDate} → ${form.flyerEndDate} · ${form.flyerSize === '8.5x11' ? '8.5×11' : 'standard'} · ${form.pageCount}p` : null}
+        defaultOpen
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Flyer start date" required hint="Must be the 1st of next month or later">
+          <Field label="Flyer starts" required hint="Must be the 1st of next month or later">
             <input
               type="date"
               value={form.flyerStartDate}
@@ -191,7 +256,7 @@ export default function SubmitForm() {
               className={inputCls}
             />
           </Field>
-          <Field label="Flyer end date" required hint="Typical flyers run 1 or 2 weeks">
+          <Field label="Flyer ends" required hint="Most flyers run 1–2 weeks">
             <input
               type="date"
               value={form.flyerEndDate}
@@ -221,7 +286,12 @@ export default function SubmitForm() {
         </div>
       </Section>
 
-      <Section title="3. Marketing channels & budgets" defaultOpen>
+      <Section
+        id="marketing"
+        title="3. Marketing channels & budgets"
+        complete={form.printCanadaPost || form.printDigital || form.facebookAdsEnabled}
+        summary={summarizeMarketing(form)}
+      >
         <Toggle
           checked={form.printCanadaPost}
           onChange={(v) => update('printCanadaPost', v)}
@@ -265,7 +335,18 @@ export default function SubmitForm() {
         </Field>
       </Section>
 
-      <Section title={`4. Products (${form.products.length})`} defaultOpen>
+      <Section
+        id="products"
+        title="4. Products"
+        complete={productsDone}
+        summary={productsDone ? `${form.products.filter((p) => p.name.trim()).length} added` : null}
+        defaultOpen
+      >
+        {form.products.length === 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-sm text-blue-900">
+            <strong>Tip:</strong> tap "+ Add product" below, then tap the photo area to take a picture with your phone's camera. Fill in the name, price, and you're done — head office gets all the details.
+          </div>
+        )}
         <ProductsSection
           products={form.products}
           totalPages={form.pageCount}
@@ -273,9 +354,14 @@ export default function SubmitForm() {
         />
       </Section>
 
-      <Section title="5. Anything else?">
+      <Section
+        id="notes"
+        title="5. Anything else? (optional)"
+        complete={!!(form.generalNotes.trim() || form.printNotes.trim())}
+        summary={null}
+      >
         <Field label="General notes for head office">
-          <textarea rows={4} value={form.generalNotes} onChange={(e) => update('generalNotes', e.target.value)} className={inputCls} />
+          <textarea rows={4} value={form.generalNotes} onChange={(e) => update('generalNotes', e.target.value)} className={inputCls} placeholder="Anything else you'd like us to know?" />
         </Field>
         <Field label="Print / production notes">
           <textarea rows={3} value={form.printNotes} onChange={(e) => update('printNotes', e.target.value)} className={inputCls} />
@@ -284,43 +370,75 @@ export default function SubmitForm() {
 
       {submitError && (
         <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-3 mt-4 text-sm">
-          {submitError}
+          <strong>Couldn't submit:</strong> {submitError}
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-20 shadow-lg">
-        <div className="max-w-3xl mx-auto flex gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm('Clear the form and start over?')) {
-                localStorage.removeItem(DRAFT_KEY);
-                setForm(emptyForm());
-                setSubmitError(null);
-              }
-            }}
-            className="px-4 py-3 rounded-lg border border-slate-200 text-slate-700"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            onClick={() => submit.mutate()}
-            disabled={submit.isPending || !form.storeName.trim() || !form.submittedBy.trim()}
-            className="flex-1 bg-brand-blue text-white font-semibold rounded-lg py-3 hover:bg-brand-blue-dark disabled:opacity-50"
-          >
-            {submit.isPending ? 'Submitting…' : 'Submit flyer'}
-          </button>
-        </div>
-        <div className="max-w-3xl mx-auto text-center text-xs text-slate-400 mt-1">
-          Draft is auto-saved on this device
+      {/* Sticky bottom action bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+        <div className="max-w-3xl mx-auto">
+          {blocker ? (
+            <button
+              type="button"
+              onClick={() => blocker.jumpTo?.()}
+              className="w-full bg-slate-100 text-slate-700 font-medium rounded-lg py-3.5 hover:bg-slate-200 flex items-center justify-center gap-2"
+            >
+              <span>👉</span>
+              <span>{blocker.msg}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => submit.mutate()}
+              disabled={submit.isPending}
+              className="w-full bg-brand-blue text-white font-bold rounded-lg py-3.5 hover:bg-brand-blue-dark disabled:opacity-60 text-lg shadow-md"
+            >
+              {submit.isPending ? 'Sending…' : 'Submit flyer ✓'}
+            </button>
+          )}
+          <div className="flex items-center justify-between mt-2 text-xs text-slate-400">
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Clear everything and start over?')) {
+                  localStorage.removeItem(DRAFT_KEY);
+                  setForm(emptyForm());
+                  setSubmitError(null);
+                }
+              }}
+              className="hover:text-brand-red"
+            >
+              Clear form
+            </button>
+            <span>Draft saved on this device</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-const inputCls = "w-full rounded-lg border border-slate-300 px-3 py-3 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none";
+function focusField(ref: React.RefObject<HTMLInputElement | null>) {
+  if (!ref.current) return;
+  ref.current.focus();
+  ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function scrollToSection(id: string) {
+  const el = document.getElementById(`section-${id}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function summarizeMarketing(f: FormState): string | null {
+  const parts: string[] = [];
+  if (f.printCanadaPost) parts.push('Canada Post');
+  if (f.printDigital) parts.push('Digital');
+  if (f.facebookAdsEnabled) parts.push('Facebook');
+  if (parts.length === 0) return null;
+  return parts.join(' · ');
+}
+
+const inputCls = "w-full rounded-lg border border-slate-300 px-3 py-3 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none text-base";
 
 function parsePositive(s: string): number | null {
   if (!s) return null;
@@ -328,17 +446,39 @@ function parsePositive(s: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function Section({
+  id, title, children, defaultOpen = false, complete = false, summary,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  complete?: boolean;
+  summary?: string | null;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-white rounded-xl border border-slate-200 mb-3 overflow-hidden">
+    <div id={`section-${id}`} className="bg-white rounded-xl border border-slate-200 mb-3 overflow-hidden scroll-mt-24">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-4 text-left font-semibold"
+        className="w-full flex items-center justify-between gap-3 p-4 text-left"
       >
-        {title}
-        <span className="text-slate-400 text-xl">{open ? '−' : '+'}</span>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div
+            className={
+              'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ' +
+              (complete ? 'bg-brand-blue text-white' : 'bg-slate-100 text-slate-400')
+            }
+          >
+            {complete ? '✓' : ''}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">{title}</div>
+            {!open && summary && <div className="text-xs text-slate-500 truncate mt-0.5">{summary}</div>}
+          </div>
+        </div>
+        <span className="text-slate-400 text-2xl leading-none shrink-0">{open ? '−' : '+'}</span>
       </button>
       {open && <div className="px-4 pb-4 space-y-3">{children}</div>}
     </div>

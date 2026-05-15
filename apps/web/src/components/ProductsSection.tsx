@@ -148,7 +148,7 @@ export default function ProductsSection({
             <button
               type="button"
               onClick={() => addProduct(pageNum)}
-              className="w-full mt-3 border-2 border-dashed border-slate-300 hover:border-brand-blue rounded-lg py-3 text-slate-600 hover:text-brand-blue font-medium transition-colors"
+              className="w-full mt-3 border-2 border-dashed border-slate-300 hover:border-brand-blue hover:bg-brand-blue/5 rounded-lg py-4 text-slate-600 hover:text-brand-blue font-semibold transition-colors active:scale-[0.99]"
             >
               + Add product to page {pageNum}
             </button>
@@ -205,22 +205,23 @@ function ProductCard({
         className="w-full p-3 flex items-center gap-3 text-left"
       >
         {product.imageUrl ? (
-          <img src={product.imageUrl} alt="" className="w-12 h-12 object-cover rounded border border-slate-200 shrink-0" />
+          <img src={product.imageUrl} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-200 shrink-0" />
         ) : (
-          <div className="w-12 h-12 rounded border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs shrink-0">
-            no img
+          <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] shrink-0 text-center px-1">
+            no photo yet
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate">{product.name || 'New product'}</div>
-          <div className="text-xs text-slate-500 truncate">
-            {product.blockSize > 1 && `${product.blockSize} blocks · `}
-            {product.colours.length > 0 && `${product.colours.length} colour${product.colours.length === 1 ? '' : 's'} · `}
+          <div className="font-semibold truncate">{product.name || 'New product (tap to fill in)'}</div>
+          <div className="text-xs text-slate-500 truncate mt-0.5">
+            {product.blockSize > 1 && `Emphasized · `}
+            {product.colours.length > 0 && `${product.colours.length} colour${product.colours.length === 1 ? '' : 's'}`}
+            {product.colours.length > 0 && product.dimensions.length > 0 && ' · '}
             {product.dimensions.length > 0 && `${product.dimensions.length} size${product.dimensions.length === 1 ? '' : 's'}`}
-            {product.colours.length === 0 && product.dimensions.length === 0 && product.blockSize === 1 && 'Tap to edit'}
+            {product.colours.length === 0 && product.dimensions.length === 0 && product.blockSize === 1 && (product.name ? 'Tap to edit' : 'Tap to add details')}
           </div>
         </div>
-        <span className="text-slate-400 text-xl shrink-0">{open ? '−' : '+'}</span>
+        <span className="text-slate-400 text-2xl leading-none shrink-0">{open ? '−' : '+'}</span>
       </button>
 
       {open && (
