@@ -2,11 +2,10 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, asc, desc, eq, gt } from 'drizzle-orm';
 import { getDb, flyerWindows } from '@flyer/db';
-import { flyerWindowSchema } from '@flyer/shared';
+import { flyerWindowSchema, flyerWindowPatchSchema } from '@flyer/shared';
 import { requireAdmin } from '../../auth.js';
 
 const idParamSchema = z.object({ id: z.coerce.number().int().positive() });
-const patchSchema = flyerWindowSchema.partial();
 
 export async function flyerWindowsRoutes(app: FastifyInstance) {
   // Public: list open windows for the submission form
@@ -49,7 +48,7 @@ export async function flyerWindowsRoutes(app: FastifyInstance) {
     const params = idParamSchema.safeParse(req.params);
     if (!params.success) return reply.code(400).send({ message: 'Bad ID' });
 
-    const parsed = patchSchema.safeParse(req.body);
+    const parsed = flyerWindowPatchSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ message: 'Bad Request', issues: parsed.error.issues });
 
     const updates: Record<string, unknown> = {};

@@ -74,7 +74,7 @@ export const submissionSchema = z.object({
 
 export type Submission = z.infer<typeof submissionSchema>;
 
-export const flyerWindowSchema = z.object({
+export const flyerWindowBaseSchema = z.object({
   label: z.string().max(200).optional().nullable(),
   flyerStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   flyerEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
@@ -82,7 +82,9 @@ export const flyerWindowSchema = z.object({
   flyerSize: z.enum(FLYER_SIZES),
   pageCount: z.number().int().refine((v) => (ALLOWED_PAGE_COUNTS as readonly number[]).includes(v), 'Page count must be 1 or an even number up to 12'),
   isOpen: z.boolean().default(true),
-}).refine((w) => {
+});
+
+export const flyerWindowSchema = flyerWindowBaseSchema.refine((w) => {
   const start = new Date(w.flyerStartDate);
   const now = new Date();
   const firstOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
@@ -92,6 +94,8 @@ export const flyerWindowSchema = z.object({
   message: 'Flyer end date must be on or after the start date',
   path: ['flyerEndDate'],
 });
+
+export const flyerWindowPatchSchema = flyerWindowBaseSchema.partial();
 
 export type FlyerWindow = z.infer<typeof flyerWindowSchema>;
 
