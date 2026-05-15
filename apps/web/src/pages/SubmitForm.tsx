@@ -62,8 +62,8 @@ function emptyForm(): FormState {
     canadaPostBudget: '',
     facebookAdsEnabled: false,
     facebookAdsBudget: '',
-    postersRequested: '0',
-    priceCardsRequested: '0',
+    postersRequested: '',
+    priceCardsRequested: '',
     bannerDetails: '',
     generalNotes: '',
     printNotes: '',
@@ -210,6 +210,15 @@ export default function SubmitForm() {
           .filter((p) => p.name.trim().length > 0)
           .map((p) => ({
             ...p,
+            name: p.name.trim(),
+            brand: emptyToNull(p.brand),
+            sku: emptyToNull(p.sku),
+            categoryOther: emptyToNull(p.categoryOther),
+            description: emptyToNull(p.description),
+            bundleItems: emptyToNull(p.bundleItems),
+            manualDiscountDescription: emptyToNull(p.manualDiscountDescription),
+            priceUnit: emptyToNull(p.priceUnit),
+            imageUrl: emptyToNull(p.imageUrl),
             regularPrice: parsePositive(p.regularPrice),
             salePrice: parsePositive(p.salePrice),
             discountPercent: parsePositive(p.discountPercent),
@@ -223,7 +232,20 @@ export default function SubmitForm() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     onError: (err) => {
-      setSubmitError(err instanceof ApiError ? err.message : 'Submission failed');
+      if (err instanceof ApiError) {
+        const body = err.body as { message?: string; issues?: Array<{ path: (string | number)[]; message: string }> } | null;
+        if (body?.issues?.length) {
+          const lines = body.issues.slice(0, 5).map((i) => {
+            const where = (i.path ?? []).join('.') || 'form';
+            return `· ${where}: ${i.message}`;
+          });
+          setSubmitError(`${body.message ?? 'Validation failed'}\n${lines.join('\n')}`);
+        } else {
+          setSubmitError(err.message);
+        }
+      } else {
+        setSubmitError('Submission failed');
+      }
     },
   });
 
@@ -302,7 +324,7 @@ export default function SubmitForm() {
       >
         <p className="text-sm text-slate-600 mb-2">Pick when the flyer runs and how big it should be.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Flyer starts" required hint="Must be the 1st of next month or later">
+          <Field label="Flyer starts" required hint={`Earliest allowed: ${formatHumanDate(firstOfNextMonth())}`}>
             <input
               type="date"
               value={form.flyerStartDate}
@@ -380,11 +402,23 @@ export default function SubmitForm() {
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-2">
-          <Field label="Posters needed">
-            <input type="number" inputMode="numeric" min="0" step="1" value={form.postersRequested} onChange={(e) => update('postersRequested', e.target.value)} className={inputCls} />
+          <Field label="Posters needed" hint="Leave blank if none">
+            <input
+              type="number" inputMode="numeric" min="0" step="1"
+              value={form.postersRequested}
+              onChange={(e) => update('postersRequested', e.target.value)}
+              placeholder="0"
+              className={inputCls}
+            />
           </Field>
-          <Field label="Price-card sets">
-            <input type="number" inputMode="numeric" min="0" step="1" value={form.priceCardsRequested} onChange={(e) => update('priceCardsRequested', e.target.value)} className={inputCls} />
+          <Field label="Price-card sets" hint="Leave blank if none">
+            <input
+              type="number" inputMode="numeric" min="0" step="1"
+              value={form.priceCardsRequested}
+              onChange={(e) => update('priceCardsRequested', e.target.value)}
+              placeholder="0"
+              className={inputCls}
+            />
           </Field>
         </div>
 
@@ -465,8 +499,8 @@ export default function SubmitForm() {
         </button>
 
         {submitError && (
-          <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-3 mt-3 text-sm">
-            <strong>Couldn't submit:</strong> {submitError}
+          <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-3 mt-3 text-sm whitespace-pre-line">
+            <strong>Couldn't submit:</strong>{'\n'}{submitError}
           </div>
         )}
       </StepCard>
@@ -511,6 +545,20 @@ function parsePositive(s: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function emptyToNull(s: string | null | undefined): string | null {
+  if (s === null || s === undefined) return null;
+  const t = s.trim();
+  return t.length > 0 ? t : null;
+}
+
+function formatHumanDate(iso: string): string {
+  try {
+    return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  } catch {
+    return iso;
+  }
+}
+
 function StepCard({
   id, title, children, complete, locked, active, summary, onToggle,
 }: {
@@ -523,6 +571,9 @@ function StepCard({
   summary: string | null;
   onToggle: () => void;
 }) {
+  // In wizard mode: open iff this is the active step. Header taps on collapsed
+  // (completed) steps re-activate them. The active step header is decorative —
+  // the only way forward is the Continue button inside.
   const open = active;
 
   return (
@@ -536,9 +587,12 @@ function StepCard({
     >
       <button
         type="button"
-        onClick={() => { if (!locked) onToggle(); }}
-        disabled={locked}
-        className={'w-full flex items-center justify-between gap-3 p-4 text-left ' + (locked ? 'cursor-not-allowed' : '')}
+        onClick={() => { if (!locked && !active) onToggle(); }}
+        disabled={locked || active}
+        className={
+          'w-full flex items-center justify-between gap-3 p-4 text-left ' +
+          (locked ? 'cursor-not-allowed' : active ? 'cursor-default' : 'hover:bg-slate-50')
+        }
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div
@@ -557,11 +611,16 @@ function StepCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className={'font-semibold ' + (locked ? 'text-slate-400' : '')}>{title}</div>
-            {!open && summary && <div className="text-xs text-slate-500 truncate mt-0.5">{summary}</div>}
+            {!active && summary && <div className="text-xs text-slate-500 truncate mt-0.5">{summary}</div>}
             {locked && <div className="text-xs text-slate-400 mt-0.5">Complete the step above first</div>}
+            {!active && !locked && complete && !summary && (
+              <div className="text-xs text-brand-blue mt-0.5">Tap to edit</div>
+            )}
           </div>
         </div>
-        {!locked && <span className="text-slate-400 text-2xl leading-none shrink-0">{open ? '−' : '+'}</span>}
+        {!locked && !active && (
+          <span className="text-brand-blue text-xs font-medium shrink-0">Edit</span>
+        )}
       </button>
       {open && !locked && <div className="px-4 pb-4 space-y-3">{children}</div>}
     </div>

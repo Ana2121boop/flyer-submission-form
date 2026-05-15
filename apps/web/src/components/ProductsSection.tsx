@@ -205,11 +205,9 @@ function ProductCard({
         className="w-full p-3 flex items-center gap-3 text-left"
       >
         {product.imageUrl ? (
-          <img src={product.imageUrl} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-200 shrink-0" />
+          <img src={product.imageUrl} alt="" className="w-24 h-24 object-cover rounded-lg border border-slate-200 shrink-0" />
         ) : (
-          <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] shrink-0 text-center px-1">
-            no photo yet
-          </div>
+          <div className="w-24 h-24 rounded-lg border-2 border-dashed border-slate-200 shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           <div className="font-semibold truncate">{product.name || 'New product (tap to fill in)'}</div>
@@ -362,7 +360,8 @@ function ProductCard({
           <div className="pt-1">
             <div className="text-sm font-medium mb-1">Pricing <span className="text-slate-400 font-normal">(all optional)</span></div>
             <p className="text-xs text-slate-500 mb-2">
-              Just regular price = everyday price. Add a sale price OR a discount % if it's on sale.
+              <strong>No price?</strong> Leave everything blank — we'll just feature the product.<br />
+              Otherwise: regular price alone = everyday price. Add a sale price OR discount % if it's on sale.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Regular ($)">
@@ -416,12 +415,16 @@ function ProductCard({
                 />
               </Field>
             </div>
-            <Field label="Other discount note" hint='e.g. "Buy 2 get 1 free"'>
+            <Field
+              label="Pricing or unit note"
+              hint='Use this for anything weird. e.g. "Sold in lift, priced per individual sheet" or "Buy 2 get 1 free"'
+            >
               <input
                 type="text"
                 value={product.manualDiscountDescription ?? ''}
                 onChange={(e) => set('manualDiscountDescription', e.target.value)}
                 className={inputCls}
+                placeholder="e.g. Sold in lift, priced each"
               />
             </Field>
           </div>
