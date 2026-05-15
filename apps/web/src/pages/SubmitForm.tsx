@@ -149,17 +149,27 @@ export default function SubmitForm() {
   }
 
   function advance() {
-    const next = nextStep(currentStep);
-    if (!next) return;
-    if (indexOf(next) > indexOf(furthest)) setFurthest(next);
-    setCurrentStep(next);
+    // If the user is editing an earlier step but they've already reached a
+    // later one, jump straight back to the furthest step instead of forcing
+    // them to walk through every intermediate step again.
+    const seqNext = nextStep(currentStep);
+    const target = (indexOf(furthest) > indexOf(currentStep) + 1)
+      ? furthest
+      : seqNext;
+    if (!target) return;
+    if (indexOf(target) > indexOf(furthest)) setFurthest(target);
+    setCurrentStep(target);
     setTimeout(() => {
-      const el = document.getElementById(`section-${next}`);
+      const el = document.getElementById(`section-${target}`);
       if (el) {
         const y = el.getBoundingClientRect().top + window.scrollY - 96;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
     }, 60);
+  }
+
+  function continueLabelFor(step: StepId): string {
+    return indexOf(furthest) > indexOf(step) + 1 ? 'Back to review →' : 'Continue →';
   }
 
   function goToStep(step: StepId) {
@@ -262,7 +272,6 @@ export default function SubmitForm() {
       <div className="max-w-3xl mx-auto px-4 py-12 text-center">
         <div className="text-6xl mb-4">✓</div>
         <h1 className="text-2xl font-bold mb-2">Thanks, your flyer's in!</h1>
-        <p className="text-slate-600 mb-1">Submission ID: <span className="font-mono">{submittedId}</span></p>
         <p className="text-slate-600 mb-6">Head office got it. You're all done — close this page or start another.</p>
         <button
           type="button"
@@ -318,6 +327,7 @@ export default function SubmitForm() {
           incompleteHint="Enter your store name and your name"
           onContinue={advance}
           onTapHint={() => { storeNameRef.current?.focus(); }}
+          label={continueLabelFor('store')}
         />
       </StepCard>
 
@@ -375,6 +385,7 @@ export default function SubmitForm() {
           complete={canContinue('dates', form)}
           incompleteHint="Fill all four fields above"
           onContinue={advance}
+          label={continueLabelFor('dates')}
         />
       </StepCard>
 
@@ -438,6 +449,7 @@ export default function SubmitForm() {
           complete={canContinue('marketing', form)}
           incompleteHint="Add the budget for the channels you picked"
           onContinue={advance}
+          label={continueLabelFor('marketing')}
         />
       </StepCard>
 
@@ -468,6 +480,7 @@ export default function SubmitForm() {
           complete={canContinue('products', form)}
           incompleteHint="Add at least one product with a name"
           onContinue={advance}
+          label={continueLabelFor('products')}
         />
       </StepCard>
 
@@ -640,11 +653,13 @@ function ContinueRow({
   incompleteHint,
   onContinue,
   onTapHint,
+  label = 'Continue →',
 }: {
   complete: boolean;
   incompleteHint: string;
   onContinue: () => void;
   onTapHint?: () => void;
+  label?: string;
 }) {
   return (
     <div className="pt-3 mt-1 border-t border-slate-100">
@@ -654,7 +669,7 @@ function ContinueRow({
           onClick={onContinue}
           className="w-full bg-brand-blue text-white font-bold rounded-lg py-3.5 hover:bg-brand-blue-dark text-lg"
         >
-          Continue →
+          {label}
         </button>
       ) : (
         <button
