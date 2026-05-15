@@ -1,15 +1,13 @@
-type Step = { id: string; label: string; done: boolean };
+type Step = {
+  id: string;
+  label: string;
+  done: boolean;
+  locked: boolean;
+  onClick: () => void;
+};
 
 export default function FormProgressBar({ steps, currentId }: { steps: Step[]; currentId: string | null }) {
   const doneCount = steps.filter((s) => s.done).length;
-
-  function scrollTo(id: string) {
-    const el = document.getElementById(`section-${id}`);
-    if (!el) return;
-    const offset = 80; // account for sticky header + this progress bar
-    const y = el.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  }
 
   return (
     <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 -mx-4 px-4 py-2 mb-4">
@@ -18,16 +16,21 @@ export default function FormProgressBar({ steps, currentId }: { steps: Step[]; c
         <span className="font-medium">{doneCount}/{steps.length} done</span>
       </div>
       <div className="flex gap-1.5">
-        {steps.map((s) => {
+        {steps.map((s, idx) => {
           const active = currentId === s.id;
           return (
             <button
               key={s.id}
               type="button"
-              onClick={() => scrollTo(s.id)}
+              onClick={() => { if (!s.locked) s.onClick(); }}
+              disabled={s.locked}
               className={
                 'flex-1 flex flex-col items-center gap-1 py-1.5 rounded-md transition-colors ' +
-                (active ? 'bg-brand-blue/10' : 'hover:bg-slate-100')
+                (s.locked
+                  ? 'opacity-40 cursor-not-allowed'
+                  : active
+                    ? 'bg-brand-blue/10'
+                    : 'hover:bg-slate-100')
               }
             >
               <div
@@ -40,7 +43,7 @@ export default function FormProgressBar({ steps, currentId }: { steps: Step[]; c
                       : 'bg-slate-200 text-slate-500')
                 }
               >
-                {s.done ? '✓' : steps.indexOf(s) + 1}
+                {s.done ? '✓' : idx + 1}
               </div>
               <span
                 className={
