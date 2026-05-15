@@ -210,16 +210,25 @@ export default function SubmitForm() {
     return 'Add at least one product to each page';
   }
 
-  function goToStep(step: StepId) {
+  function goToStep(step: StepId, fieldId?: string | null) {
     if (!isReachable(step)) return;
     setCurrentStep(step);
     setTimeout(() => {
-      const el = document.getElementById(`section-${step}`);
-      if (el) {
-        const y = el.getBoundingClientRect().top + window.scrollY - 96;
+      // Prefer the specific field if we have one; fall back to the section.
+      const target = (fieldId && document.getElementById(fieldId)) || document.getElementById(`section-${step}`);
+      if (target) {
+        const y = target.getBoundingClientRect().top + window.scrollY - 110;
         window.scrollTo({ top: y, behavior: 'smooth' });
+        // Focus the input itself, or any input inside the field wrapper.
+        const focusable = (target.matches('input, select, textarea')
+          ? target
+          : target.querySelector('input, select, textarea')) as HTMLElement | null;
+        if (focusable && typeof focusable.focus === 'function') {
+          // Tiny delay so the smooth-scroll has started.
+          setTimeout(() => focusable.focus({ preventScroll: true }), 250);
+        }
       }
-    }, 60);
+    }, 80);
   }
 
   // Keep `furthest` in sync if user changes data later (e.g., clears their name)
@@ -239,6 +248,11 @@ export default function SubmitForm() {
   }, [form.storeName, form.submittedBy, form.products.length]);
 
   const submit = useMutation({
+    onMutate: () => {
+      // Clear stale errors so the new attempt's outcome is unambiguous.
+      setSubmitError(null);
+      setSubmitIssues([]);
+    },
     mutationFn: async () => {
       if (!form.flyerSize) throw new ApiError(400, 'Pick a flyer size');
       const body = {
@@ -355,13 +369,13 @@ export default function SubmitForm() {
         onToggle={() => goToStep('store')}
       >
         <Field label="Store name" required>
-          <input ref={storeNameRef} type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)} className={inputCls} placeholder="e.g. Windsor Plywood Surrey" />
+          <input id="field-storeName" ref={storeNameRef} type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)} className={inputCls} placeholder="e.g. Windsor Plywood Surrey" />
         </Field>
         <Field label="Your name" required>
-          <input type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} placeholder="So we know who to ask if there's a question" />
+          <input id="field-submittedBy" type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} placeholder="So we know who to ask if there's a question" />
         </Field>
         <Field label="Theme / title (optional)" hint='e.g. "Black Friday", "Spring DIY Sale"'>
-          <input type="text" value={form.theme} onChange={(e) => update('theme', e.target.value)} className={inputCls} />
+          <input id="field-theme" type="text" value={form.theme} onChange={(e) => update('theme', e.target.value)} className={inputCls} />
         </Field>
         <ContinueRow
           complete={canContinue('store', form)}
@@ -389,12 +403,12 @@ export default function SubmitForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Flyer starts" required>
             <input
+              id="field-flyerStartDate"
               type="date"
               value={form.flyerStartDate}
               min={earliest}
               onChange={(e) => update('flyerStartDate', e.target.value)}
               onBlur={(e) => {
-                // Snap invalid manually-typed dates to the earliest allowed.
                 if (e.target.value && e.target.value < earliest) {
                   update('flyerStartDate', earliest);
                 }
@@ -404,6 +418,7 @@ export default function SubmitForm() {
           </Field>
           <Field label="Flyer ends" required>
             <input
+              id="field-flyerEndDate"
               type="date"
               value={form.flyerEndDate}
               min={form.flyerStartDate || earliest}
@@ -419,6 +434,7 @@ export default function SubmitForm() {
           </Field>
           <Field label="Flyer size" required>
             <select
+              id="field-flyerSize"
               value={form.flyerSize}
               onChange={(e) => update('flyerSize', e.target.value as '' | 'standard' | '8.5x11')}
               className={inputCls + ' bg-white'}
@@ -429,6 +445,7 @@ export default function SubmitForm() {
           </Field>
           <Field label="Number of pages" required>
             <select
+              id="field-pageCount"
               value={form.pageCount}
               onChange={(e) => updatePageCount(Number(e.target.value))}
               className={inputCls + ' bg-white'}
@@ -589,8 +606,9 @@ export default function SubmitForm() {
                   <button
                     type="button"
                     onClick={() => {
-                      setSubmitIssues([]);
-                      goToStep(issue.step);
+                      // Don't clear — keep the list visible so they remember
+                      // what's pending. We'll clear on the next submit attempt.
+                      goToStep(issue.step, fieldIdForPath(issue.path));
                     }}
                     className="text-xs font-semibold bg-brand-red text-white px-3 py-2 rounded shrink-0"
                   >
@@ -641,6 +659,16 @@ function stepForPath(path: (string | number)[]): StepId {
   if (['flyerStartDate', 'flyerEndDate', 'flyerSize', 'pageCount'].includes(top)) return 'dates';
   if (top === 'products') return 'products';
   return 'marketing';
+}
+
+function fieldIdForPath(path: (string | number)[]): string | null {
+  if (!path.length) return null;
+  const top = String(path[0]);
+  // For top-level scalar fields, we use the field id directly.
+  if (typeof path[0] === 'string' && path.length === 1) {
+    return `field-${top}`;
+  }
+  return null;
 }
 
 function describeIssue(path: (string | number)[]): string {

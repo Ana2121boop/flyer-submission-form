@@ -196,7 +196,8 @@ function ProductCard({
   const [open, setOpen] = useState(!product.name);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const minBlock = computeMinBlockSize(product);
 
@@ -249,7 +250,7 @@ function ProductCard({
           <div>
             <label className="block text-sm font-medium mb-1">Photo</label>
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
@@ -257,26 +258,45 @@ function ProductCard({
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) handleFile(f);
+                e.target.value = '';
               }}
             />
-            <div className="flex gap-2">
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = '';
+              }}
+            />
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 border border-slate-300 rounded-lg px-3 py-3 text-slate-700 hover:border-brand-blue"
+                onClick={() => cameraInputRef.current?.click()}
+                className="border border-slate-300 rounded-lg px-3 py-3 text-slate-700 hover:border-brand-blue font-medium"
               >
-                {product.imageUrl ? 'Replace photo' : 'Take / choose photo'}
+                Take photo
               </button>
-              {product.imageUrl && (
-                <button
-                  type="button"
-                  onClick={() => set('imageUrl', undefined)}
-                  className="px-3 py-3 border border-slate-300 rounded-lg text-brand-red hover:border-brand-red"
-                >
-                  Remove
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="border border-slate-300 rounded-lg px-3 py-3 text-slate-700 hover:border-brand-blue font-medium"
+              >
+                Choose from gallery
+              </button>
             </div>
+            {product.imageUrl && (
+              <button
+                type="button"
+                onClick={() => set('imageUrl', undefined)}
+                className="text-sm text-brand-red mt-2 hover:underline"
+              >
+                Remove photo
+              </button>
+            )}
             {uploadProgress !== null && (
               <div className="mt-2">
                 <div className="h-2 bg-slate-200 rounded overflow-hidden">
