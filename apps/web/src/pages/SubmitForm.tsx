@@ -110,7 +110,9 @@ export default function SubmitForm() {
     queryFn: () => api<{ flyerAdvanceMonths: number }>('/api/config'),
     staleTime: 60_000 * 60, // 1 hour
   });
-  const advanceMonths = config?.flyerAdvanceMonths ?? 1;
+  // Default to 2 (matches server default) so we don't briefly show the wrong
+  // earliest date while config is loading.
+  const advanceMonths = config?.flyerAdvanceMonths ?? 2;
   const earliest = earliestStart(advanceMonths);
 
   const [form, setForm] = useState<FormState>(() => {
@@ -341,13 +343,23 @@ export default function SubmitForm() {
         onToggle={() => goToStep('dates')}
       >
         <p className="text-sm text-slate-600 mb-2">Pick when the flyer runs and how big it should be.</p>
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-3 mb-3 text-sm">
+          <strong>Head office needs {advanceMonths === 1 ? '1 month' : `${advanceMonths} months`} lead time.</strong>
+          {' '}Earliest start date is <strong>{formatHumanDate(earliest)}</strong>.
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Flyer starts" required hint={`Earliest allowed: ${formatHumanDate(earliest)} (${advanceMonths === 1 ? '1 month' : `${advanceMonths} months`} lead time)`}>
+          <Field label="Flyer starts" required>
             <input
               type="date"
               value={form.flyerStartDate}
               min={earliest}
               onChange={(e) => update('flyerStartDate', e.target.value)}
+              onBlur={(e) => {
+                // Snap invalid manually-typed dates to the earliest allowed.
+                if (e.target.value && e.target.value < earliest) {
+                  update('flyerStartDate', earliest);
+                }
+              }}
               className={inputCls}
             />
           </Field>
@@ -357,6 +369,12 @@ export default function SubmitForm() {
               value={form.flyerEndDate}
               min={form.flyerStartDate || earliest}
               onChange={(e) => update('flyerEndDate', e.target.value)}
+              onBlur={(e) => {
+                const floor = form.flyerStartDate || earliest;
+                if (e.target.value && e.target.value < floor) {
+                  update('flyerEndDate', floor);
+                }
+              }}
               className={inputCls}
             />
           </Field>

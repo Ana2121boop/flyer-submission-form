@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import AdminShell from '../components/AdminShell';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type Category = {
   id: number;
@@ -13,6 +14,7 @@ export default function AdminCategories() {
   const qc = useQueryClient();
   const [newName, setNewName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Category | null>(null);
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ['admin', 'categories'],
@@ -97,11 +99,7 @@ export default function AdminCategories() {
             </label>
             <button
               type="button"
-              onClick={() => {
-                if (confirm(`Delete "${c.name}"? Existing submissions keep their data, but this category can't be picked again.`)) {
-                  remove.mutate(c.id);
-                }
-              }}
+              onClick={() => setPendingDelete(c)}
               className="text-sm px-3 py-2 border border-slate-200 text-brand-red rounded-lg hover:border-brand-red"
             >
               Delete
@@ -109,6 +107,22 @@ export default function AdminCategories() {
           </div>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete category?"
+        description={pendingDelete
+          ? `Delete "${pendingDelete.name}"?\nExisting submissions keep their data, but this category can't be picked again.`
+          : ''}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        pending={remove.isPending}
+        onConfirm={() => {
+          if (pendingDelete) remove.mutate(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </AdminShell>
   );
 }

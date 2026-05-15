@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError, getToken } from '../lib/api';
 import AdminShell from '../components/AdminShell';
 import Lightbox, { type LightboxItem } from '../components/Lightbox';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type AdminProduct = {
   id: number;
@@ -74,8 +75,8 @@ export default function AdminSubmissionDetail() {
   const softDelete = useMutation({
     mutationFn: () => api(`/api/admin/submission/${id}`, { method: 'DELETE', auth: true }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'submission', id] });
       qc.invalidateQueries({ queryKey: ['submissions'] });
+      navigate('/admin');
     },
   });
 
@@ -99,6 +100,7 @@ export default function AdminSubmissionDetail() {
   const [zipPending, setZipPending] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'trash' | 'permanent' | null>(null);
 
   async function downloadFile(path: string, filename: string, setBusy: (b: boolean) => void) {
     setBusy(true);
@@ -248,9 +250,7 @@ export default function AdminSubmissionDetail() {
           {!submission.deletedAt && (
             <button
               type="button"
-              onClick={() => {
-                if (confirm('Move this submission to trash? You can restore it later.')) softDelete.mutate();
-              }}
+              onClick={() => setConfirmAction('trash')}
               className="px-4 py-2 border border-slate-200 text-brand-red rounded-lg hover:border-brand-red"
             >
               Move to trash
@@ -267,11 +267,7 @@ export default function AdminSubmissionDetail() {
           )}
           <button
             type="button"
-            onClick={() => {
-              if (confirm('Permanently delete this submission and all its products / images references? This cannot be undone.')) {
-                hardDelete.mutate();
-              }
-            }}
+            onClick={() => setConfirmAction('permanent')}
             className="px-4 py-2 border border-red-300 bg-red-50 text-brand-red rounded-lg hover:bg-red-100"
           >
             Delete permanently
@@ -306,6 +302,28 @@ export default function AdminSubmissionDetail() {
           onClose={() => setLightboxIndex(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmAction === 'trash'}
+        title="Move to trash?"
+        description={`This submission from ${submission.storeName} will be moved to the trash.\nYou can restore it later from the "Show trash" filter on the submissions list.`}
+        confirmLabel="Move to trash"
+        confirmVariant="warning"
+        pending={softDelete.isPending}
+        onConfirm={() => { softDelete.mutate(); setConfirmAction(null); }}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === 'permanent'}
+        title="Delete permanently?"
+        description={`This will permanently delete ${submission.storeName}'s submission and all its product data. Photos in storage stay.\n\nThis cannot be undone.`}
+        confirmLabel="Delete permanently"
+        confirmVariant="danger"
+        pending={hardDelete.isPending}
+        onConfirm={() => { hardDelete.mutate(); setConfirmAction(null); }}
+        onCancel={() => setConfirmAction(null)}
+      />
     </AdminShell>
   );
 }
