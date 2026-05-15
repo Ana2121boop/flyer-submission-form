@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
+import ProductsSection, { type Product } from '../components/ProductsSection';
 
 type FlyerWindow = {
   id: number;
@@ -11,32 +12,6 @@ type FlyerWindow = {
   submissionDeadline: string;
   flyerSize: string;
   pageCount: number;
-};
-
-type Product = {
-  // Phase 5: full product editor with image upload, multi-colour/dimension, block size auto-bump
-  pageNumber: number;
-  slotIndex: number;
-  blockSize: number;
-  name: string;
-  brand?: string;
-  sku?: string;
-  categoryId?: number | null;
-  categoryOther?: string;
-  description?: string;
-  imageUrl?: string;
-  colours: string[];
-  dimensions: string[];
-  regularPrice?: number;
-  salePrice?: number;
-  priceUnit?: string;
-  discountPercent?: number;
-  manualDiscountDescription?: string;
-  isMainFlyerProduct: boolean;
-  isBundle: boolean;
-  bundleItems?: string;
-  requestStockImage: boolean;
-  includeInSocial: boolean;
 };
 
 type FormState = {
@@ -132,7 +107,8 @@ export default function SubmitForm() {
         reqPosters: Number(form.postersRequested) > 0,
         reqBanners: !!form.bannerDetails.trim(),
         printNotes: form.printNotes.trim() || null,
-        products: form.products,
+        // Drop empty draft cards so server validation doesn't complain about missing names
+        products: form.products.filter((p) => p.name.trim().length > 0),
       };
       return api<{ submissionId: number }>('/api/submit', { method: 'POST', body });
     },
@@ -246,11 +222,13 @@ export default function SubmitForm() {
         </Field>
       </Section>
 
-      {/* Section 3: Products — placeholder for next commit */}
-      <Section title="3. Products" defaultOpen>
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
-          <strong>Products editor coming in the next deploy.</strong> You'll be able to add products with photos, multiple colours/dimensions (+ button), category dropdown, price + unit, and block size 1–3 (auto-bumped when many options are added).
-        </div>
+      {/* Section 3: Products */}
+      <Section title={`3. Products (${form.products.length})`} defaultOpen>
+        <ProductsSection
+          products={form.products}
+          totalPages={window.pageCount}
+          onChange={(next) => update('products', next)}
+        />
       </Section>
 
       {/* Section 4: Notes */}
