@@ -13,6 +13,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  // Optional: if both set on first deploy, an admin user is auto-created.
+  ADMIN_USERNAME: z.string().min(1).max(100).optional(),
+  ADMIN_PASSWORD: z.string().min(8).max(200).optional(),
 });
 
 export const env = envSchema.parse(process.env);

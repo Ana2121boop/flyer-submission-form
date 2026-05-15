@@ -6,6 +6,7 @@ import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { env } from './env.js';
+import { bootstrap } from './bootstrap.js';
 import { loginRoutes } from './routes/admin/login.js';
 import { submitRoutes } from './routes/submit.js';
 import { submissionsAdminRoutes } from './routes/admin/submissions.js';
@@ -61,6 +62,10 @@ async function buildServer() {
 const app = await buildServer();
 
 try {
+  await bootstrap({
+    info: (msg) => app.log.info(msg),
+    warn: (msg) => app.log.warn(msg),
+  });
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
   app.log.info(`Flyer API listening on :${env.PORT}`);
 } catch (err) {
