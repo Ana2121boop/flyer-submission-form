@@ -2,6 +2,7 @@ import { Route, Routes, Link, useLocation } from 'react-router-dom';
 import SubmitForm from './pages/SubmitForm';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminSubmissionDetail from './pages/AdminSubmissionDetail';
 import AdminCategories from './pages/AdminCategories';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
           <Route path="/" element={<SubmitForm />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/submissions/:id" element={<AdminSubmissionDetail />} />
           <Route path="/admin/categories" element={<AdminCategories />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

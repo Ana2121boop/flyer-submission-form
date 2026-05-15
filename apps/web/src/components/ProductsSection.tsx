@@ -183,21 +183,6 @@ function ProductCard({
     onChange({ ...product, [key]: value });
   }
 
-  function addColour(value: string) {
-    const v = value.trim();
-    if (!v) return;
-    const next = { ...product, colours: [...product.colours, v] };
-    next.blockSize = Math.max(next.blockSize, computeMinBlockSize(next));
-    onChange(next);
-  }
-  function addDimension(value: string) {
-    const v = value.trim();
-    if (!v) return;
-    const next = { ...product, dimensions: [...product.dimensions, v] };
-    next.blockSize = Math.max(next.blockSize, computeMinBlockSize(next));
-    onChange(next);
-  }
-
   async function handleFile(file: File) {
     setUploadError(null);
     setUploadProgress(0);
@@ -341,29 +326,34 @@ function ProductCard({
             </Field>
           )}
 
-          {/* Colours */}
-          <ChipField
+          {/* Colours — single text input, comma-separated, with parsed-preview chips */}
+          <ListField
             label="Colours"
             values={product.colours}
-            onAdd={addColour}
-            onRemove={(i) => set('colours', product.colours.filter((_, idx) => idx !== i))}
+            onChange={(next) => {
+              const updated = { ...product, colours: next };
+              updated.blockSize = Math.max(updated.blockSize, computeMinBlockSize(updated));
+              onChange(updated);
+            }}
             placeholder="e.g. White, Oak, Charcoal"
           />
 
-          {/* Dimensions */}
-          <ChipField
+          <ListField
             label="Sizes / dimensions"
             values={product.dimensions}
-            onAdd={addDimension}
-            onRemove={(i) => set('dimensions', product.dimensions.filter((_, idx) => idx !== i))}
-            placeholder='e.g. 4&quot; x 8&quot;, 12 ft, 1L'
+            onChange={(next) => {
+              const updated = { ...product, dimensions: next };
+              updated.blockSize = Math.max(updated.blockSize, computeMinBlockSize(updated));
+              onChange(updated);
+            }}
+            placeholder={'e.g. 4" x 8", 12 ft, 1L'}
           />
 
           {(product.colours.length > 2 || product.dimensions.length > 2) && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-900">
               {product.colours.length > 5 || product.dimensions.length > 5
-                ? 'Lots of options — block size bumped to 3 slots so they all fit.'
-                : 'More than 2 options — block size bumped to 2 slots to make room.'}
+                ? 'Lots of options — this product will get extra space on the flyer.'
+                : 'More than 2 options — this product will get a bit more space.'}
             </div>
           )}
 
@@ -435,33 +425,22 @@ function ProductCard({
             </Field>
           </div>
 
-          {/* Size on flyer + page */}
-          <Field label="Size on flyer" hint={minBlock > 1 ? `Bumped to ${minBlock === 2 ? 'Medium' : 'Large'} because of multiple options` : 'How much space this product takes on the flyer'}>
-            <div className="flex gap-2">
-              {[1, 2, 3].map((n) => {
-                const labels = ['Small', 'Medium', 'Large'];
-                const disabled = n < minBlock;
-                const active = product.blockSize === n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => set('blockSize', n)}
-                    className={
-                      'flex-1 py-3 rounded-lg border-2 font-medium transition-colors ' +
-                      (active
-                        ? 'border-brand-blue bg-brand-blue/10 text-brand-blue'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300') +
-                      (disabled ? ' opacity-40 cursor-not-allowed' : '')
-                    }
-                  >
-                    {labels[n - 1]}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
+          {/* Emphasize toggle — replaces the old block-size buttons */}
+          <Toggle
+            checked={product.blockSize >= 2}
+            onChange={(v) => {
+              if (v) {
+                set('blockSize', Math.max(2, minBlock));
+              } else {
+                // Can't go below auto-bumped minimum
+                set('blockSize', minBlock);
+              }
+            }}
+            label="Emphasize this product"
+          />
+          {product.blockSize > 1 && minBlock > 1 && (
+            <p className="text-xs text-slate-500 -mt-2">Auto-emphasized because of multiple colours/sizes.</p>
+          )}
 
           <Field label="Page in flyer">
             <select
@@ -529,69 +508,52 @@ function ProductCard({
   );
 }
 
-function ChipField({
+function ListField({
   label,
   values,
-  onAdd,
-  onRemove,
+  onChange,
   placeholder,
 }: {
   label: string;
   values: string[];
-  onAdd: (v: string) => void;
-  onRemove: (i: number) => void;
+  onChange: (next: string[]) => void;
   placeholder?: string;
 }) {
-  const [draft, setDraft] = useState('');
+  // Keep the raw text local so the user can type freely (incl. trailing commas / spaces)
+  // without us scrambling their cursor as they type.
+  const [text, setText] = useState(values.join(', '));
 
-  function commit() {
-    if (!draft.trim()) return;
-    onAdd(draft);
-    setDraft('');
+  // If parent changes the values externally (draft restore), sync once.
+  const externalJoined = values.join(', ');
+  if (externalJoined !== text && document.activeElement?.tagName !== 'INPUT') {
+    // No-op outside focus; covered by useEffect-like behavior below.
+  }
+
+  function commit(raw: string) {
+    setText(raw);
+    const parsed = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    onChange(parsed);
   }
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1">{label}</label>
+      <label className="block text-sm font-medium mb-1">{label} <span className="text-slate-400 font-normal text-xs">(separate with commas)</span></label>
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => commit(e.target.value)}
+        placeholder={placeholder}
+        className={inputCls}
+      />
       {values.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="flex flex-wrap gap-1.5 mt-2">
           {values.map((v, i) => (
-            <span key={i} className="inline-flex items-center gap-1 bg-brand-blue/10 text-brand-blue px-2 py-1 rounded-full text-sm">
+            <span key={i} className="inline-flex items-center bg-brand-blue/10 text-brand-blue px-2 py-1 rounded-full text-xs">
               {v}
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                className="hover:text-brand-red"
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
             </span>
           ))}
         </div>
       )}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              commit();
-            }
-          }}
-          placeholder={placeholder}
-          className={inputCls}
-        />
-        <button
-          type="button"
-          onClick={commit}
-          className="px-4 rounded-lg border-2 border-brand-blue text-brand-blue font-bold hover:bg-brand-blue hover:text-white"
-        >
-          +
-        </button>
-      </div>
     </div>
   );
 }
