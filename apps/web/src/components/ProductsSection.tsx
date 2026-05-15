@@ -16,6 +16,9 @@ export type Product = {
   imageUrl?: string;
   colours: string[];
   dimensions: string[];
+  // When false, the price block is hidden and all price fields are sent as null
+  // ("we just carry this product"). Default true.
+  showPrice: boolean;
   // Prices stored as strings to allow free typing (e.g. "1.5" without losing the dot
   // when input type=number coerces values mid-keystroke). Parsed to numbers at submit time.
   regularPrice: string;
@@ -69,6 +72,7 @@ export function emptyProduct(pageNumber: number, slotIndex: number): Product {
     name: '',
     colours: [],
     dimensions: [],
+    showPrice: true,
     regularPrice: '',
     salePrice: '',
     discountPercent: '',
@@ -126,27 +130,25 @@ export default function ProductsSection({
     onChange(products.filter((_, i) => i !== idx));
   }
 
+  // Global: block adding new products anywhere while any product (on any page)
+  // is still unfilled. Forces serial one-at-a-time editing.
+  const anyIncomplete = products.find((p) => !p.name.trim());
+  const incompletePage = anyIncomplete?.pageNumber;
+
   return (
     <div className="space-y-4">
       {pages.map((pageNum) => {
         const onPage = products
           .map((p, idx) => ({ p, idx }))
           .filter(({ p }) => p.pageNumber === pageNum);
-        const slotsUsed = onPage.reduce((sum, { p }) => sum + p.blockSize, 0);
-        const slotsAvailable = slotsForPage(pageNum);
-        const overCapacity = slotsUsed > slotsAvailable;
-        // Block "+ Add product" if any product on the page hasn't been named yet.
-        // Forces stores to finish one product before starting the next.
-        const incompleteOnPage = onPage.find(({ p }) => !p.name.trim());
+        const namedOnPage = onPage.filter(({ p }) => p.name.trim().length > 0);
 
         return (
           <div key={pageNum} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Page {pageNum}</h3>
-              <span className={
-                'text-xs ' + (overCapacity ? 'text-brand-red font-medium' : 'text-slate-500')
-              }>
-                {slotsUsed} of {slotsAvailable} slots
+              <span className="text-xs text-slate-500">
+                {namedOnPage.length} {namedOnPage.length === 1 ? 'product' : 'products'}
               </span>
             </div>
 
@@ -163,9 +165,11 @@ export default function ProductsSection({
               ))}
             </div>
 
-            {incompleteOnPage ? (
-              <div className="mt-3 text-center text-sm text-slate-500 py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg">
-                Finish filling in the product above before adding another.
+            {anyIncomplete ? (
+              <div className="mt-3 text-center text-sm text-slate-700 py-3 px-3 bg-amber-50 border border-amber-200 rounded-lg">
+                {incompletePage === pageNum
+                  ? 'Finish filling in the product above first.'
+                  : `Finish the unfilled product on page ${incompletePage} first.`}
               </div>
             ) : (
               <button
@@ -382,77 +386,121 @@ function ProductCard({
             </div>
           )}
 
-          {/* Pricing (all optional) */}
+          {/* Pricing — explicit choice between "show a price" and "we just carry it" */}
           <div className="pt-1">
-            <div className="text-sm font-medium mb-1">Pricing <span className="text-slate-400 font-normal">(all optional)</span></div>
-            <p className="text-xs text-slate-500 mb-2">
-              <strong>No price?</strong> Leave everything blank — we'll just feature the product.<br />
-              Otherwise: regular price alone = everyday price. Add a sale price OR discount % if it's on sale.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Regular ($)">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={product.regularPrice}
-                  onChange={(e) => {
-                    const next = { ...product, regularPrice: e.target.value };
-                    next.discountPercent = computeDiscount(next.regularPrice, next.salePrice) ?? product.discountPercent;
-                    onChange(next);
-                  }}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Sale ($)">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={product.salePrice}
-                  onChange={(e) => {
-                    const next = { ...product, salePrice: e.target.value };
-                    next.discountPercent = computeDiscount(next.regularPrice, next.salePrice) ?? product.discountPercent;
-                    onChange(next);
-                  }}
-                  className={inputCls}
-                />
-              </Field>
+            <div className="text-sm font-medium mb-2">Pricing</div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => set('showPrice', true)}
+                className={
+                  'py-3 rounded-lg border-2 font-medium transition-colors ' +
+                  (product.showPrice
+                    ? 'border-brand-blue bg-brand-blue/10 text-brand-blue'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-300')
+                }
+              >
+                Show a price
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({
+                  ...product,
+                  showPrice: false,
+                  regularPrice: '',
+                  salePrice: '',
+                  discountPercent: '',
+                  priceUnit: undefined,
+                  manualDiscountDescription: undefined,
+                })}
+                className={
+                  'py-3 rounded-lg border-2 font-medium transition-colors ' +
+                  (!product.showPrice
+                    ? 'border-brand-blue bg-brand-blue/10 text-brand-blue'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-300')
+                }
+              >
+                Just carry it<br /><span className="text-xs font-normal">(no price)</span>
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <Field label="Unit (per...)">
-                <select
-                  value={product.priceUnit ?? ''}
-                  onChange={(e) => set('priceUnit', e.target.value || undefined)}
-                  className={inputCls + ' bg-white'}
+
+            {!product.showPrice && (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-600 text-center">
+                Got it — we'll feature this product without showing a price.
+              </div>
+            )}
+
+            {product.showPrice && (
+              <>
+                <p className="text-xs text-slate-500 mb-2">
+                  Regular price alone = everyday price. Add a sale price OR a discount % if it's on sale. Skip what doesn't apply.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Regular ($)">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={product.regularPrice}
+                      onChange={(e) => {
+                        const next = { ...product, regularPrice: e.target.value };
+                        next.discountPercent = computeDiscount(next.regularPrice, next.salePrice) ?? product.discountPercent;
+                        onChange(next);
+                      }}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Sale ($)">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={product.salePrice}
+                      onChange={(e) => {
+                        const next = { ...product, salePrice: e.target.value };
+                        next.discountPercent = computeDiscount(next.regularPrice, next.salePrice) ?? product.discountPercent;
+                        onChange(next);
+                      }}
+                      className={inputCls}
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Field label="Unit (per...)">
+                    <select
+                      value={product.priceUnit ?? ''}
+                      onChange={(e) => set('priceUnit', e.target.value || undefined)}
+                      className={inputCls + ' bg-white'}
+                    >
+                      <option value="">—</option>
+                      {PRICE_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Discount %">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={product.discountPercent}
+                      onChange={(e) => set('discountPercent', e.target.value)}
+                      className={inputCls}
+                    />
+                  </Field>
+                </div>
+                <Field
+                  label="Pricing or unit note"
+                  hint='Use this for anything weird. e.g. "Sold in lift, priced per individual sheet" or "Buy 2 get 1 free"'
                 >
-                  <option value="">—</option>
-                  {PRICE_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-                </select>
-              </Field>
-              <Field label="Discount %">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={product.discountPercent}
-                  onChange={(e) => set('discountPercent', e.target.value)}
-                  className={inputCls}
-                />
-              </Field>
-            </div>
-            <Field
-              label="Pricing or unit note"
-              hint='Use this for anything weird. e.g. "Sold in lift, priced per individual sheet" or "Buy 2 get 1 free"'
-            >
-              <input
-                type="text"
-                value={product.manualDiscountDescription ?? ''}
-                onChange={(e) => set('manualDiscountDescription', e.target.value)}
-                className={inputCls}
-                placeholder="e.g. Sold in lift, priced each"
-              />
-            </Field>
+                  <input
+                    type="text"
+                    value={product.manualDiscountDescription ?? ''}
+                    onChange={(e) => set('manualDiscountDescription', e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. Sold in lift, priced each"
+                  />
+                </Field>
+              </>
+            )}
           </div>
 
           {/* Emphasize toggle — replaces the old block-size buttons */}

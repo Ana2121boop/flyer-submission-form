@@ -5,7 +5,7 @@ import ProductsSection, { type Product } from '../components/ProductsSection';
 import FormProgressBar from '../components/FormProgressBar';
 
 const FLYER_SIZES: Array<{ value: 'standard' | '8.5x11'; label: string }> = [
-  { value: 'standard', label: 'Standard' },
+  { value: 'standard', label: '10.5" × 11" (Canada Post)' },
   { value: '8.5x11', label: '8.5" × 11"' },
 ];
 const PAGE_COUNTS = [1, 2, 4, 6, 8] as const;
@@ -78,7 +78,21 @@ function isDatesDone(f: FormState) {
   return !!f.flyerStartDate && !!f.flyerEndDate && !!f.flyerSize && f.pageCount > 0;
 }
 function isProductsDone(f: FormState) {
-  return f.products.some((p) => p.name.trim().length > 0);
+  if (f.pageCount <= 0) return false;
+  if (!f.products.some((p) => p.name.trim().length > 0)) return false;
+  return emptyPages(f).length === 0;
+}
+function emptyPages(f: FormState): number[] {
+  if (f.pageCount <= 0) return [];
+  const empty: number[] = [];
+  for (let i = 1; i <= f.pageCount; i++) {
+    const has = f.products.some((p) => p.pageNumber === i && p.name.trim().length > 0);
+    if (!has) empty.push(i);
+  }
+  return empty;
+}
+function hasIncompleteProduct(f: FormState) {
+  return f.products.some((p) => !p.name.trim());
 }
 function isMarketingValid(f: FormState) {
   if (f.printCanadaPost && !f.canadaPostBudget.trim()) return false;
@@ -118,7 +132,17 @@ export default function SubmitForm() {
   const [form, setForm] = useState<FormState>(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
     if (saved) {
-      try { return { ...emptyForm(), ...JSON.parse(saved) }; } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved);
+        // Migrate older drafts that pre-date the showPrice toggle.
+        if (Array.isArray(parsed.products)) {
+          parsed.products = parsed.products.map((p: Record<string, unknown>) => ({
+            showPrice: true,
+            ...p,
+          }));
+        }
+        return { ...emptyForm(), ...parsed };
+      } catch { /* ignore */ }
     }
     return emptyForm();
   });
@@ -173,6 +197,17 @@ export default function SubmitForm() {
 
   function continueLabelFor(step: StepId): string {
     return indexOf(furthest) > indexOf(step) + 1 ? 'Back to review →' : 'Continue →';
+  }
+
+  function productsHint(f: FormState): string {
+    if (hasIncompleteProduct(f)) return 'Fill in the unfilled product before continuing';
+    if (!f.products.some((p) => p.name.trim().length > 0)) return 'Add at least one product to each page';
+    const empty = emptyPages(f);
+    if (empty.length > 0) {
+      const list = empty.join(', ');
+      return `Page ${empty.length === 1 ? list : 's ' + list} need at least one product`;
+    }
+    return 'Add at least one product to each page';
   }
 
   function goToStep(step: StepId) {
@@ -500,7 +535,7 @@ export default function SubmitForm() {
         )}
         <ContinueRow
           complete={canContinue('products', form)}
-          incompleteHint="Add at least one product with a name"
+          incompleteHint={productsHint(form)}
           onContinue={advance}
           label={continueLabelFor('products')}
         />
