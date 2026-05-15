@@ -358,7 +358,7 @@ function ProductCard({
               updated.blockSize = Math.max(updated.blockSize, computeMinBlockSize(updated));
               onChange(updated);
             }}
-            placeholder="Type your own, separated by commas"
+            placeholder="e.g. White, Espresso, Sea Green"
             presets={COLOUR_PRESETS}
           />
 
@@ -370,7 +370,7 @@ function ProductCard({
               updated.blockSize = Math.max(updated.blockSize, computeMinBlockSize(updated));
               onChange(updated);
             }}
-            placeholder="Tap a common size below, or type your own"
+            placeholder="e.g. 4x8, 12 ft, 1L, custom..."
             presets={DIMENSION_PRESETS}
           />
 
@@ -583,30 +583,10 @@ function ListField({
   return (
     <div>
       <label className="block text-sm font-medium mb-1">
-        {label} <span className="text-slate-400 font-normal text-xs">(comma-separated)</span>
+        {label} <span className="text-slate-400 font-normal text-xs">(any, separate with commas)</span>
       </label>
-      {presets && presets.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {presets.map((p) => {
-            const active = values.includes(p);
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => addPreset(p)}
-                className={
-                  'text-xs px-2.5 py-1.5 rounded-full border transition-colors ' +
-                  (active
-                    ? 'bg-brand-blue text-white border-brand-blue'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-brand-blue hover:text-brand-blue')
-                }
-              >
-                {active ? '✓ ' : '+ '}{p}
-              </button>
-            );
-          })}
-        </div>
-      )}
+
+      {/* Primary input — type anything */}
       <input
         type="text"
         value={text}
@@ -614,13 +594,44 @@ function ListField({
         placeholder={placeholder}
         className={inputCls}
       />
+
+      {/* What they've added so far */}
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
           {values.map((v, i) => (
-            <span key={i} className="inline-flex items-center bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs">
+            <span key={i} className="inline-flex items-center bg-brand-blue/10 text-brand-blue px-2 py-1 rounded-full text-xs">
               {v}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Secondary: quick-add shortcuts, clearly subordinate */}
+      {presets && presets.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-dashed border-slate-200">
+          <div className="text-[11px] text-slate-500 mb-1.5">
+            Or tap a common one to add it (you can still type any you want above):
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {presets.map((p) => {
+              const active = values.includes(p);
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => addPreset(p)}
+                  className={
+                    'text-xs px-2 py-1 rounded-full border transition-colors ' +
+                    (active
+                      ? 'bg-brand-blue/10 border-brand-blue text-brand-blue'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white hover:border-brand-blue/40')
+                  }
+                >
+                  {active ? '✓ ' : '+ '}{p}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
