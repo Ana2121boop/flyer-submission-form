@@ -2,20 +2,23 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Copy all package.json files first to leverage Docker layer caching
+# Copy all package.json files first for layer caching
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install all deps including dev (we use tsx at runtime to run TS directly)
+# Install all workspace deps (include dev because tsx + vite are runtime/build tools)
 RUN npm install --include=dev --no-audit --no-fund
 
-# Copy source
+# Copy the rest
 COPY . .
 
-EXPOSE 3000
+# Build the React frontend (vite output -> apps/web/dist, served by Fastify)
+RUN npm run build --workspace=@flyer/web
 
+EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
