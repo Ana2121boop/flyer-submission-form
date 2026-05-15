@@ -13,6 +13,7 @@ import { submissionsAdminRoutes } from './routes/admin/submissions.js';
 import { flyerWindowsRoutes } from './routes/admin/flyer-windows.js';
 import { categoriesRoutes } from './routes/admin/categories.js';
 import { pdfRoutes } from './routes/admin/pdf.js';
+import { exportRoutes } from './routes/admin/export.js';
 import { uploadsRoutes } from './routes/uploads.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -42,6 +43,7 @@ async function buildServer() {
   await app.register(flyerWindowsRoutes);
   await app.register(categoriesRoutes);
   await app.register(pdfRoutes);
+  await app.register(exportRoutes);
   await app.register(uploadsRoutes);
 
   // Serve the React app build. Falls back to index.html for client-side routes.
