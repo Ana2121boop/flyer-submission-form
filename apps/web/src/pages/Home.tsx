@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 
 type FlyerWindow = {
@@ -12,6 +13,7 @@ type FlyerWindow = {
 };
 
 export default function Home() {
+  const navigate = useNavigate();
   const { data: windows, isLoading, isError } = useQuery({
     queryKey: ['flyer-windows'],
     queryFn: () => api<FlyerWindow[]>('/api/flyer-windows'),
@@ -37,7 +39,7 @@ export default function Home() {
             <button
               type="button"
               className="w-full text-left rounded-xl border-2 border-slate-200 bg-white p-4 hover:border-brand-blue active:bg-slate-50 transition-colors"
-              onClick={() => alert(`Form for window ${w.id} coming in next commit`)}
+              onClick={() => navigate(`/submit/${w.id}`)}
             >
               <div className="font-semibold text-lg">{w.label ?? `Flyer ${w.flyerStartDate} – ${w.flyerEndDate}`}</div>
               <div className="text-sm text-slate-500 mt-1">

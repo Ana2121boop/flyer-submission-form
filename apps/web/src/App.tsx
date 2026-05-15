@@ -1,5 +1,6 @@
 import { Route, Routes, Link } from 'react-router-dom';
 import Home from './pages/Home';
+import SubmitForm from './pages/SubmitForm';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminFlyerWindows from './pages/AdminFlyerWindows';
@@ -12,6 +13,7 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/submit/:windowId" element={<SubmitForm />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/windows" element={<AdminFlyerWindows />} />

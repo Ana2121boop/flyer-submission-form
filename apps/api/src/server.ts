@@ -12,6 +12,7 @@ import { submitRoutes } from './routes/submit.js';
 import { submissionsAdminRoutes } from './routes/admin/submissions.js';
 import { flyerWindowsRoutes } from './routes/admin/flyer-windows.js';
 import { categoriesRoutes } from './routes/admin/categories.js';
+import { uploadsRoutes } from './routes/uploads.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -39,6 +40,7 @@ async function buildServer() {
   await app.register(submissionsAdminRoutes);
   await app.register(flyerWindowsRoutes);
   await app.register(categoriesRoutes);
+  await app.register(uploadsRoutes);
 
   // Serve the React app build. Falls back to index.html for client-side routes.
   const webDist = resolve(__dirname, '../../web/dist');
