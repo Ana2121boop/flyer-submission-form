@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, getToken } from '../lib/api';
 import AdminShell from '../components/AdminShell';
 
 type AdminProduct = {
@@ -93,6 +93,34 @@ export default function AdminSubmissionDetail() {
       navigate('/admin');
     },
   });
+
+  const [pdfPending, setPdfPending] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  async function downloadPdf() {
+    if (!id) return;
+    setPdfPending(true);
+    setPdfError(null);
+    try {
+      const res = await fetch(`/api/admin/submission/${id}/pdf`, {
+        headers: { Authorization: `Bearer ${getToken() ?? ''}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `flyer-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setPdfError(e instanceof Error ? e.message : 'PDF download failed');
+    } finally {
+      setPdfPending(false);
+    }
+  }
 
   if (isLoading) return <AdminShell title="Loading…"><p className="text-slate-500">Loading…</p></AdminShell>;
   if (!submission) return (
@@ -238,13 +266,14 @@ export default function AdminSubmissionDetail() {
           </button>
           <button
             type="button"
-            disabled
-            title="PDF export coming next"
-            className="px-4 py-2 border border-slate-200 text-slate-400 rounded-lg cursor-not-allowed"
+            onClick={downloadPdf}
+            disabled={pdfPending}
+            className="px-4 py-2 border border-brand-blue text-brand-blue rounded-lg hover:bg-brand-blue hover:text-white disabled:opacity-50"
           >
-            Download PDF (soon)
+            {pdfPending ? 'Generating PDF…' : 'Download PDF'}
           </button>
         </div>
+        {pdfError && <p className="text-brand-red text-sm mt-2">{pdfError}</p>}
       </div>
     </AdminShell>
   );

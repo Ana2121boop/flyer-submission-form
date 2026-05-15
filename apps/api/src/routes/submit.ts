@@ -7,6 +7,7 @@ import {
   submissionProductDimensions,
 } from '@flyer/db';
 import { submissionSchema } from '@flyer/shared';
+import { sendNewSubmissionEmail } from '../services/email.js';
 
 export async function submitRoutes(app: FastifyInstance) {
   app.post('/api/submit', async (req, reply) => {
@@ -87,6 +88,24 @@ export async function submitRoutes(app: FastifyInstance) {
 
       return submissionId;
     });
+
+    // Fire-and-forget notification. Never block the response on it.
+    sendNewSubmissionEmail(
+      {
+        submissionId: insertedId,
+        storeName: data.storeName,
+        submittedBy: data.submittedBy,
+        productCount: data.products.length,
+        flyerStartDate: data.flyerStartDate,
+        flyerEndDate: data.flyerEndDate,
+        theme: data.theme ?? null,
+      },
+      {
+        info: (m) => app.log.info(m),
+        warn: (m) => app.log.warn(m),
+        error: (m) => app.log.error(m),
+      },
+    ).catch((err) => app.log.error(`Email task failed: ${err}`));
 
     return reply.code(201).send({ message: 'Submission successful', submissionId: insertedId });
   });
