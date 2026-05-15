@@ -125,6 +125,7 @@ export default function SubmitForm() {
   const [furthest, setFurthest] = useState<StepId>(() => computeFurthest(form));
   const [currentStep, setCurrentStep] = useState<StepId>(furthest);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitIssues, setSubmitIssues] = useState<Array<{ path: (string | number)[]; message: string; step: StepId }>>([]);
   const [submittedId, setSubmittedId] = useState<number | null>(null);
   const storeNameRef = useRef<HTMLInputElement>(null);
 
@@ -255,16 +256,19 @@ export default function SubmitForm() {
       if (err instanceof ApiError) {
         const body = err.body as { message?: string; issues?: Array<{ path: (string | number)[]; message: string }> } | null;
         if (body?.issues?.length) {
-          const lines = body.issues.slice(0, 5).map((i) => {
-            const where = (i.path ?? []).join('.') || 'form';
-            return `· ${where}: ${i.message}`;
-          });
-          setSubmitError(`${body.message ?? 'Validation failed'}\n${lines.join('\n')}`);
+          const annotated = body.issues.slice(0, 5).map((i) => ({
+            ...i,
+            step: stepForPath(i.path),
+          }));
+          setSubmitIssues(annotated);
+          setSubmitError(null);
         } else {
           setSubmitError(err.message);
+          setSubmitIssues([]);
         }
       } else {
         setSubmitError('Submission failed');
+        setSubmitIssues([]);
       }
     },
   });
@@ -537,9 +541,37 @@ export default function SubmitForm() {
           {submit.isPending ? 'Sending…' : 'Submit flyer'}
         </button>
 
+        {submitIssues.length > 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-3 mt-3 text-sm">
+            <strong>Couldn't submit — a few things need fixing:</strong>
+            <ul className="mt-2 space-y-2">
+              {submitIssues.map((issue, i) => (
+                <li key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white rounded p-2 border border-red-100">
+                  <div className="min-w-0">
+                    <div className="font-medium">{describeIssue(issue.path)}</div>
+                    <div className="text-xs text-slate-600">{issue.message}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitIssues([]);
+                      goToStep(issue.step);
+                    }}
+                    className="text-xs font-semibold bg-brand-red text-white px-3 py-2 rounded shrink-0"
+                  >
+                    Fix this →
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-slate-600 mt-2">
+              Tap "Fix this" to jump to the section. The Continue button there will bring you back here.
+            </p>
+          </div>
+        )}
         {submitError && (
-          <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-3 mt-3 text-sm whitespace-pre-line">
-            <strong>Couldn't submit:</strong>{'\n'}{submitError}
+          <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-3 mt-3 text-sm">
+            <strong>Couldn't submit:</strong> {submitError}
           </div>
         )}
       </StepCard>
@@ -565,6 +597,38 @@ export default function SubmitForm() {
       </div>
     </div>
   );
+}
+
+function stepForPath(path: (string | number)[]): StepId {
+  if (!path.length) return 'review';
+  const top = String(path[0]);
+  if (['storeName', 'submittedBy', 'theme'].includes(top)) return 'store';
+  if (['flyerStartDate', 'flyerEndDate', 'flyerSize', 'pageCount'].includes(top)) return 'dates';
+  if (top === 'products') return 'products';
+  return 'marketing';
+}
+
+function describeIssue(path: (string | number)[]): string {
+  if (!path.length) return 'Submission';
+  const top = String(path[0]);
+  const labels: Record<string, string> = {
+    storeName: 'Store name',
+    submittedBy: 'Your name',
+    theme: 'Theme',
+    flyerStartDate: 'Flyer start date',
+    flyerEndDate: 'Flyer end date',
+    flyerSize: 'Flyer size',
+    pageCount: 'Number of pages',
+    canadaPostBudget: 'Canada Post budget',
+    facebookAdsBudget: 'Facebook ads budget',
+    postersRequested: 'Posters needed',
+    priceCardsRequested: 'Price-card sets',
+    bannerDetails: 'Banner details',
+  };
+  if (top === 'products' && typeof path[1] === 'number') {
+    return `Product ${path[1] + 1}`;
+  }
+  return labels[top] ?? top;
 }
 
 function summarizeMarketing(f: FormState): string | null {

@@ -35,6 +35,21 @@ type Category = { id: number; name: string };
 const PAGE_1_SLOTS = 8;
 const DEFAULT_PAGE_SLOTS = 16;
 
+// Quick-add chips so store managers don't have to hunt for × on a mobile keyboard.
+// Covers Windsor's main product mix: plywood / sheet goods, dimensional lumber,
+// gallons (paint/glue/finish), and pounds (hardware bundles).
+const DIMENSION_PRESETS = [
+  "4'×8'", "4'×4'", "2'×4'", "2'×8'",
+  '8 ft', '10 ft', '12 ft', '16 ft',
+  '1 gal', '5 gal', '1 quart', '1 pint',
+  '1 lb', '5 lbs', '20 lbs',
+];
+
+const COLOUR_PRESETS = [
+  'White', 'Black', 'Brown', 'Grey', 'Natural',
+  'Oak', 'Walnut', 'Cherry', 'Espresso', 'Maple',
+];
+
 const PRICE_UNITS: Array<{ value: string; label: string }> = [
   { value: 'each', label: 'each' },
   { value: 'pack', label: 'pack' },
@@ -120,6 +135,9 @@ export default function ProductsSection({
         const slotsUsed = onPage.reduce((sum, { p }) => sum + p.blockSize, 0);
         const slotsAvailable = slotsForPage(pageNum);
         const overCapacity = slotsUsed > slotsAvailable;
+        // Block "+ Add product" if any product on the page hasn't been named yet.
+        // Forces stores to finish one product before starting the next.
+        const incompleteOnPage = onPage.find(({ p }) => !p.name.trim());
 
         return (
           <div key={pageNum} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
@@ -145,13 +163,19 @@ export default function ProductsSection({
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={() => addProduct(pageNum)}
-              className="w-full mt-3 border-2 border-dashed border-slate-300 hover:border-brand-blue hover:bg-brand-blue/5 rounded-lg py-4 text-slate-600 hover:text-brand-blue font-semibold transition-colors active:scale-[0.99]"
-            >
-              + Add product to page {pageNum}
-            </button>
+            {incompleteOnPage ? (
+              <div className="mt-3 text-center text-sm text-slate-500 py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg">
+                Finish filling in the product above before adding another.
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => addProduct(pageNum)}
+                className="w-full mt-3 border-2 border-dashed border-slate-300 hover:border-brand-blue hover:bg-brand-blue/5 rounded-lg py-4 text-slate-600 hover:text-brand-blue font-semibold transition-colors active:scale-[0.99]"
+              >
+                {onPage.length === 0 ? `+ Add the first product to page ${pageNum}` : `+ Add another product to page ${pageNum}`}
+              </button>
+            )}
           </div>
         );
       })}
@@ -325,7 +349,7 @@ function ProductCard({
             </Field>
           )}
 
-          {/* Colours — single text input, comma-separated, with parsed-preview chips */}
+          {/* Colours — single text input + quick-add chips for common Windsor colours */}
           <ListField
             label="Colours"
             values={product.colours}
@@ -334,7 +358,8 @@ function ProductCard({
               updated.blockSize = Math.max(updated.blockSize, computeMinBlockSize(updated));
               onChange(updated);
             }}
-            placeholder="e.g. White, Oak, Charcoal"
+            placeholder="Type your own, separated by commas"
+            presets={COLOUR_PRESETS}
           />
 
           <ListField
@@ -345,7 +370,8 @@ function ProductCard({
               updated.blockSize = Math.max(updated.blockSize, computeMinBlockSize(updated));
               onChange(updated);
             }}
-            placeholder={'e.g. 4" x 8", 12 ft, 1L'}
+            placeholder="Tap a common size below, or type your own"
+            presets={DIMENSION_PRESETS}
           />
 
           {(product.colours.length > 2 || product.dimensions.length > 2) && (
@@ -495,15 +521,23 @@ function ProductCard({
             />
           </Field>
 
-          <div className="pt-2 border-t border-slate-100 flex justify-end">
+          <div className="pt-3 mt-2 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2">
             <button
               type="button"
               onClick={() => {
                 if (confirm('Remove this product?')) onRemove();
               }}
-              className="text-sm text-brand-red px-3 py-2 hover:underline"
+              className="text-sm text-brand-red px-3 py-2 hover:underline self-start"
             >
               Remove product
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              disabled={!product.name.trim()}
+              className="bg-brand-blue text-white font-semibold rounded-lg py-3 px-5 hover:bg-brand-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {product.name.trim() ? 'Done with this product ✓' : 'Add a name to continue'}
             </button>
           </div>
         </div>
@@ -517,21 +551,15 @@ function ListField({
   values,
   onChange,
   placeholder,
+  presets,
 }: {
   label: string;
   values: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
+  presets?: string[];
 }) {
-  // Keep the raw text local so the user can type freely (incl. trailing commas / spaces)
-  // without us scrambling their cursor as they type.
   const [text, setText] = useState(values.join(', '));
-
-  // If parent changes the values externally (draft restore), sync once.
-  const externalJoined = values.join(', ');
-  if (externalJoined !== text && document.activeElement?.tagName !== 'INPUT') {
-    // No-op outside focus; covered by useEffect-like behavior below.
-  }
 
   function commit(raw: string) {
     setText(raw);
@@ -539,9 +567,46 @@ function ListField({
     onChange(parsed);
   }
 
+  function addPreset(preset: string) {
+    if (values.includes(preset)) {
+      // Already there — remove on second tap so it acts like a chip toggle.
+      const next = values.filter((v) => v !== preset);
+      setText(next.join(', '));
+      onChange(next);
+    } else {
+      const next = [...values, preset];
+      setText(next.join(', '));
+      onChange(next);
+    }
+  }
+
   return (
     <div>
-      <label className="block text-sm font-medium mb-1">{label} <span className="text-slate-400 font-normal text-xs">(separate with commas)</span></label>
+      <label className="block text-sm font-medium mb-1">
+        {label} <span className="text-slate-400 font-normal text-xs">(comma-separated)</span>
+      </label>
+      {presets && presets.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {presets.map((p) => {
+            const active = values.includes(p);
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => addPreset(p)}
+                className={
+                  'text-xs px-2.5 py-1.5 rounded-full border transition-colors ' +
+                  (active
+                    ? 'bg-brand-blue text-white border-brand-blue'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-brand-blue hover:text-brand-blue')
+                }
+              >
+                {active ? '✓ ' : '+ '}{p}
+              </button>
+            );
+          })}
+        </div>
+      )}
       <input
         type="text"
         value={text}
@@ -552,7 +617,7 @@ function ListField({
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
           {values.map((v, i) => (
-            <span key={i} className="inline-flex items-center bg-brand-blue/10 text-brand-blue px-2 py-1 rounded-full text-xs">
+            <span key={i} className="inline-flex items-center bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs">
               {v}
             </span>
           ))}
