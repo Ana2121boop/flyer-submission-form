@@ -4,7 +4,6 @@ import { clearToken, getToken } from '../lib/api';
 
 const tabs = [
   { to: '/admin', label: 'Submissions' },
-  { to: '/admin/windows', label: 'Flyer windows' },
   { to: '/admin/categories', label: 'Categories' },
 ];
 

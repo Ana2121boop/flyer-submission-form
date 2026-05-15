@@ -53,6 +53,11 @@ export const submissions = pgTable('submissions', {
   storeName: text('store_name').notNull(),
   submittedBy: text('submitted_by').notNull(),
 
+  flyerStartDate: date('flyer_start_date'),
+  flyerEndDate: date('flyer_end_date'),
+  flyerSize: text('flyer_size'),
+  pageCount: integer('page_count'),
+
   theme: text('theme'),
   generalNotes: text('general_notes'),
 

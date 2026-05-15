@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import ProductsSection, { type Product } from '../components/ProductsSection';
 
-type FlyerWindow = {
-  id: number;
-  label: string | null;
-  flyerStartDate: string;
-  flyerEndDate: string;
-  submissionDeadline: string;
-  flyerSize: string;
-  pageCount: number;
-};
+const FLYER_SIZES: Array<{ value: 'standard' | '8.5x11'; label: string }> = [
+  { value: 'standard', label: 'Standard' },
+  { value: '8.5x11', label: '8.5" × 11" (Canada Post)' },
+];
+const PAGE_COUNTS = [1, 2, 4, 6, 8, 10, 12] as const;
 
 type FormState = {
   storeName: string;
   submittedBy: string;
+
+  flyerStartDate: string;
+  flyerEndDate: string;
+  flyerSize: 'standard' | '8.5x11';
+  pageCount: number;
+
   theme: string;
 
   printCanadaPost: boolean;
@@ -36,12 +37,25 @@ type FormState = {
   products: Product[];
 };
 
-const DRAFT_KEY_PREFIX = 'flyer_draft_window_';
+const DRAFT_KEY = 'flyer_draft_v2';
+
+function firstOfNextMonth(): string {
+  const now = new Date();
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return next.toISOString().slice(0, 10);
+}
 
 function emptyForm(): FormState {
+  const start = firstOfNextMonth();
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 13);
   return {
     storeName: '',
     submittedBy: '',
+    flyerStartDate: start,
+    flyerEndDate: end.toISOString().slice(0, 10),
+    flyerSize: 'standard',
+    pageCount: 4,
     theme: '',
     printCanadaPost: false,
     printDigital: false,
@@ -58,21 +72,8 @@ function emptyForm(): FormState {
 }
 
 export default function SubmitForm() {
-  const { windowId } = useParams<{ windowId: string }>();
-  const navigate = useNavigate();
-  const draftKey = `${DRAFT_KEY_PREFIX}${windowId}`;
-
-  const { data: window, isLoading } = useQuery({
-    queryKey: ['flyer-window', windowId],
-    queryFn: async () => {
-      const all = await api<FlyerWindow[]>('/api/flyer-windows');
-      return all.find((w) => w.id === Number(windowId)) ?? null;
-    },
-    enabled: !!windowId,
-  });
-
   const [form, setForm] = useState<FormState>(() => {
-    const saved = localStorage.getItem(draftKey);
+    const saved = localStorage.getItem(DRAFT_KEY);
     if (saved) {
       try { return { ...emptyForm(), ...JSON.parse(saved) }; } catch { /* ignore */ }
     }
@@ -81,18 +82,35 @@ export default function SubmitForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<number | null>(null);
 
-  // Autosave on every change
   useEffect(() => {
-    localStorage.setItem(draftKey, JSON.stringify(form));
-  }, [form, draftKey]);
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  }, [form]);
+
+  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // If page count drops, reassign products on now-nonexistent pages.
+  function updatePageCount(n: number) {
+    setForm((f) => ({
+      ...f,
+      pageCount: n,
+      products: f.products.map((p) => ({
+        ...p,
+        pageNumber: p.pageNumber > n ? n : p.pageNumber,
+      })),
+    }));
+  }
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (!windowId) throw new Error('Missing flyer window');
       const body = {
-        flyerWindowId: Number(windowId),
         storeName: form.storeName.trim(),
         submittedBy: form.submittedBy.trim(),
+        flyerStartDate: form.flyerStartDate,
+        flyerEndDate: form.flyerEndDate,
+        flyerSize: form.flyerSize,
+        pageCount: form.pageCount,
         theme: form.theme.trim() || null,
         generalNotes: form.generalNotes.trim() || null,
         printCanadaPost: form.printCanadaPost,
@@ -107,27 +125,18 @@ export default function SubmitForm() {
         reqPosters: Number(form.postersRequested) > 0,
         reqBanners: !!form.bannerDetails.trim(),
         printNotes: form.printNotes.trim() || null,
-        // Drop empty draft cards so server validation doesn't complain about missing names
         products: form.products.filter((p) => p.name.trim().length > 0),
       };
       return api<{ submissionId: number }>('/api/submit', { method: 'POST', body });
     },
     onSuccess: (data) => {
       setSubmittedId(data.submissionId);
-      localStorage.removeItem(draftKey);
+      localStorage.removeItem(DRAFT_KEY);
     },
     onError: (err) => {
       setSubmitError(err instanceof ApiError ? err.message : 'Submission failed');
     },
   });
-
-  if (isLoading) return <div className="max-w-3xl mx-auto px-4 py-6">Loading…</div>;
-  if (!window) return (
-    <div className="max-w-3xl mx-auto px-4 py-6 text-center">
-      <p className="mb-4">This flyer window is closed or no longer available.</p>
-      <button type="button" onClick={() => navigate('/')} className="text-brand-blue underline">Back to home</button>
-    </div>
-  );
 
   if (submittedId !== null) {
     return (
@@ -138,36 +147,23 @@ export default function SubmitForm() {
         <p className="text-slate-600 mb-6">Head office has it. You can close this page.</p>
         <button
           type="button"
-          onClick={() => { setSubmittedId(null); setForm(emptyForm()); navigate('/'); }}
+          onClick={() => { setSubmittedId(null); setForm(emptyForm()); }}
           className="bg-brand-blue text-white font-semibold rounded-lg px-6 py-3 hover:bg-brand-blue-dark"
         >
-          Done
+          Submit another flyer
         </button>
       </div>
     );
   }
 
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
-
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 pb-32">
-      {/* Selected window banner */}
-      <div className="bg-brand-blue/10 border border-brand-blue/30 rounded-xl p-3 mb-4 text-sm">
-        <div className="font-medium text-brand-blue">
-          {window.label ?? `Flyer ${window.flyerStartDate} – ${window.flyerEndDate}`}
-        </div>
-        <div className="text-slate-600 text-xs mt-1">
-          {window.flyerSize} · {window.pageCount} {window.pageCount === 1 ? 'page' : 'pages'} ·
-          {' '}submit by {new Date(window.submissionDeadline).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold mb-1">Submit a flyer</h1>
+      <p className="text-slate-600 mb-6">Fill out the form below. Your progress is saved on this device as you type.</p>
 
-      {/* Section 1: Store info */}
       <Section title="1. Your store" defaultOpen>
         <Field label="Store name" required>
-          <input type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)} className={inputCls} />
+          <input type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)} className={inputCls} placeholder="e.g. Windsor Plywood Surrey" />
         </Field>
         <Field label="Your name" required>
           <input type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} />
@@ -177,8 +173,48 @@ export default function SubmitForm() {
         </Field>
       </Section>
 
-      {/* Section 2: Marketing channels */}
-      <Section title="2. Marketing channels & budgets" defaultOpen>
+      <Section title="2. Flyer details" defaultOpen>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Flyer start date" required hint="Must be the 1st of next month or later">
+            <input
+              type="date"
+              value={form.flyerStartDate}
+              min={firstOfNextMonth()}
+              onChange={(e) => update('flyerStartDate', e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Flyer end date" required>
+            <input
+              type="date"
+              value={form.flyerEndDate}
+              min={form.flyerStartDate}
+              onChange={(e) => update('flyerEndDate', e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Flyer size" required>
+            <select
+              value={form.flyerSize}
+              onChange={(e) => update('flyerSize', e.target.value as 'standard' | '8.5x11')}
+              className={inputCls + ' bg-white'}
+            >
+              {FLYER_SIZES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Number of pages" required>
+            <select
+              value={form.pageCount}
+              onChange={(e) => updatePageCount(Number(e.target.value))}
+              className={inputCls + ' bg-white'}
+            >
+              {PAGE_COUNTS.map((n) => <option key={n} value={n}>{n} {n === 1 ? 'page' : 'pages'}</option>)}
+            </select>
+          </Field>
+        </div>
+      </Section>
+
+      <Section title="3. Marketing channels & budgets" defaultOpen>
         <Toggle
           checked={form.printCanadaPost}
           onChange={(v) => update('printCanadaPost', v)}
@@ -222,17 +258,15 @@ export default function SubmitForm() {
         </Field>
       </Section>
 
-      {/* Section 3: Products */}
-      <Section title={`3. Products (${form.products.length})`} defaultOpen>
+      <Section title={`4. Products (${form.products.length})`} defaultOpen>
         <ProductsSection
           products={form.products}
-          totalPages={window.pageCount}
+          totalPages={form.pageCount}
           onChange={(next) => update('products', next)}
         />
       </Section>
 
-      {/* Section 4: Notes */}
-      <Section title="4. Anything else?">
+      <Section title="5. Anything else?">
         <Field label="General notes for head office">
           <textarea rows={4} value={form.generalNotes} onChange={(e) => update('generalNotes', e.target.value)} className={inputCls} />
         </Field>
@@ -247,15 +281,20 @@ export default function SubmitForm() {
         </div>
       )}
 
-      {/* Sticky submit bar — always reachable on mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-20 shadow-lg">
         <div className="max-w-3xl mx-auto flex gap-3">
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => {
+              if (confirm('Clear the form and start over?')) {
+                localStorage.removeItem(DRAFT_KEY);
+                setForm(emptyForm());
+                setSubmitError(null);
+              }
+            }}
             className="px-4 py-3 rounded-lg border border-slate-200 text-slate-700"
           >
-            Cancel
+            Clear
           </button>
           <button
             type="button"

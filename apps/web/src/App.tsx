@@ -1,9 +1,7 @@
-import { Route, Routes, Link } from 'react-router-dom';
-import Home from './pages/Home';
+import { Route, Routes, Link, useLocation } from 'react-router-dom';
 import SubmitForm from './pages/SubmitForm';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminFlyerWindows from './pages/AdminFlyerWindows';
 import AdminCategories from './pages/AdminCategories';
 
 export default function App() {
@@ -12,11 +10,9 @@ export default function App() {
       <Header />
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/submit/:windowId" element={<SubmitForm />} />
+          <Route path="/" element={<SubmitForm />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/windows" element={<AdminFlyerWindows />} />
           <Route path="/admin/categories" element={<AdminCategories />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -27,25 +23,22 @@ export default function App() {
 }
 
 function Header() {
+  const { pathname } = useLocation();
+  const isAdminArea = pathname.startsWith('/admin');
+
   return (
     <header className="bg-brand-blue text-white shadow">
       <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-3">
-          {/* Drop windsor-logo.svg or .png into apps/web/public/ and the <img> below will pick it up.
-              Falls back to text wordmark if the asset is missing. */}
+        <Link to={isAdminArea ? '/admin' : '/'} className="flex items-center gap-3">
           <img
             src="/windsor-logo.svg"
             alt="Windsor Plywood"
             className="h-10 w-auto"
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
-          <span className="text-xl font-bold tracking-tight">Windsor Plywood</span>
-        </Link>
-        <Link
-          to="/admin"
-          className="text-sm opacity-80 hover:opacity-100 px-3 py-2 rounded"
-        >
-          Admin
+          <span className="text-xl font-bold tracking-tight">
+            Windsor Plywood{isAdminArea && ' · Admin'}
+          </span>
         </Link>
       </div>
     </header>

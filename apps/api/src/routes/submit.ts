@@ -1,12 +1,10 @@
 import type { FastifyInstance } from 'fastify';
-import { and, eq, gt } from 'drizzle-orm';
 import {
   getDb,
   submissions,
   submissionProducts,
   submissionProductColours,
   submissionProductDimensions,
-  flyerWindows,
 } from '@flyer/db';
 import { submissionSchema } from '@flyer/shared';
 
@@ -20,21 +18,14 @@ export async function submitRoutes(app: FastifyInstance) {
 
     const db = getDb();
 
-    const [window] = await db
-      .select()
-      .from(flyerWindows)
-      .where(and(eq(flyerWindows.id, data.flyerWindowId), eq(flyerWindows.isOpen, true), gt(flyerWindows.submissionDeadline, new Date())))
-      .limit(1);
-
-    if (!window) {
-      return reply.code(400).send({ message: 'Selected flyer window is closed or past its deadline' });
-    }
-
     const insertedId = await db.transaction(async (tx) => {
       const [row] = await tx.insert(submissions).values({
-        flyerWindowId: data.flyerWindowId,
         storeName: data.storeName,
         submittedBy: data.submittedBy,
+        flyerStartDate: data.flyerStartDate,
+        flyerEndDate: data.flyerEndDate,
+        flyerSize: data.flyerSize,
+        pageCount: data.pageCount,
         theme: data.theme ?? null,
         generalNotes: data.generalNotes ?? null,
         printCanadaPost: data.printCanadaPost,

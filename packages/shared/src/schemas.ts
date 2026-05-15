@@ -39,10 +39,16 @@ export const productSchema = z.object({
 export type Product = z.infer<typeof productSchema>;
 
 export const submissionSchema = z.object({
-  flyerWindowId: z.number().int(),
-
   storeName: z.string().min(1, 'Store name is required').max(200),
   submittedBy: z.string().min(1, 'Submitter name is required').max(200),
+
+  flyerStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+  flyerEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+  flyerSize: z.enum(FLYER_SIZES),
+  pageCount: z.number().int().refine(
+    (v) => (ALLOWED_PAGE_COUNTS as readonly number[]).includes(v),
+    'Page count must be 1 or an even number up to 12',
+  ),
 
   theme: z.string().max(200).optional().nullable(),
   generalNotes: z.string().max(5000).optional().nullable(),
@@ -70,6 +76,15 @@ export const submissionSchema = z.object({
 ).refine(
   (s) => !s.printCanadaPost || (s.canadaPostBudget !== null && s.canadaPostBudget !== undefined && s.canadaPostBudget > 0),
   { message: 'Canada Post budget is required when Canada Post flyer is selected', path: ['canadaPostBudget'] },
+).refine((s) => {
+  const start = new Date(s.flyerStartDate + 'T00:00:00Z');
+  const now = new Date();
+  const firstOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return start >= firstOfNextMonth;
+}, { message: 'Flyer start date must be the first of next month or later', path: ['flyerStartDate'] }
+).refine(
+  (s) => new Date(s.flyerEndDate) >= new Date(s.flyerStartDate),
+  { message: 'Flyer end date must be on or after the start date', path: ['flyerEndDate'] },
 );
 
 export type Submission = z.infer<typeof submissionSchema>;
