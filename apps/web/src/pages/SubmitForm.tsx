@@ -6,7 +6,7 @@ import FormProgressBar from '../components/FormProgressBar';
 
 const FLYER_SIZES: Array<{ value: 'standard' | '8.5x11'; label: string }> = [
   { value: 'standard', label: 'Standard' },
-  { value: '8.5x11', label: '8.5" × 11" (Canada Post)' },
+  { value: '8.5x11', label: '8.5" × 11"' },
 ];
 const PAGE_COUNTS = [1, 2, 4, 6, 8] as const;
 
