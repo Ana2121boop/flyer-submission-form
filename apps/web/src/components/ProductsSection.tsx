@@ -35,9 +35,6 @@ export type Product = {
 
 type Category = { id: number; name: string };
 
-const PAGE_1_SLOTS = 8;
-const DEFAULT_PAGE_SLOTS = 16;
-
 // Quick-add chips so store managers don't have to hunt for × on a mobile keyboard.
 // Covers Windsor's main product mix: plywood / sheet goods, dimensional lumber,
 // gallons (paint/glue/finish), and pounds (hardware bundles).
@@ -95,10 +92,6 @@ function computeDiscount(regular: string, sale: string): string | null {
   const sal = Number(sale);
   if (!regular || !sale || !Number.isFinite(reg) || !Number.isFinite(sal) || reg <= 0 || sal >= reg) return null;
   return String(Math.round(((reg - sal) / reg) * 100));
-}
-
-function slotsForPage(pageNumber: number): number {
-  return pageNumber === 1 ? PAGE_1_SLOTS : DEFAULT_PAGE_SLOTS;
 }
 
 export default function ProductsSection({
