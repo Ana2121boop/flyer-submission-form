@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 
 # Install all deps including dev (we use tsx at runtime to run TS directly)
-RUN npm install --include=dev
+RUN npm install --include=dev --no-audit --no-fund
 
 # Copy source
 COPY . .
