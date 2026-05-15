@@ -16,6 +16,6 @@
     "db:studio": "npm run studio --workspace=@flyer/db"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }
