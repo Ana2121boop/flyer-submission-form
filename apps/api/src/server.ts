@@ -15,6 +15,7 @@ import { categoriesRoutes } from './routes/admin/categories.js';
 import { pdfRoutes } from './routes/admin/pdf.js';
 import { exportRoutes } from './routes/admin/export.js';
 import { uploadsRoutes } from './routes/uploads.js';
+import { configRoutes } from './routes/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +46,7 @@ async function buildServer() {
   await app.register(pdfRoutes);
   await app.register(exportRoutes);
   await app.register(uploadsRoutes);
+  await app.register(configRoutes);
 
   // Serve the React app build. Falls back to index.html for client-side routes.
   const webDist = resolve(__dirname, '../../web/dist');

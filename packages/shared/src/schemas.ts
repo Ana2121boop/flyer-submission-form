@@ -76,16 +76,20 @@ export const submissionSchema = z.object({
 ).refine(
   (s) => !s.printCanadaPost || (s.canadaPostBudget !== null && s.canadaPostBudget !== undefined && s.canadaPostBudget > 0),
   { message: 'Canada Post budget is required when Canada Post flyer is selected', path: ['canadaPostBudget'] },
-).refine((s) => {
-  const start = new Date(s.flyerStartDate + 'T00:00:00Z');
-  const now = new Date();
-  const firstOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return start >= firstOfNextMonth;
-}, { message: 'Flyer start date must be the first of next month or later', path: ['flyerStartDate'] }
 ).refine(
   (s) => new Date(s.flyerEndDate) >= new Date(s.flyerStartDate),
   { message: 'Flyer end date must be on or after the start date', path: ['flyerEndDate'] },
 );
+
+/**
+ * Returns the earliest allowed flyer start date (YYYY-MM-DD) given a lead-time
+ * in months. 1 = first of next month, 2 = first of month-after-next, etc.
+ */
+export function earliestFlyerStartDate(advanceMonths: number): string {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + advanceMonths, 1));
+  return d.toISOString().slice(0, 10);
+}
 
 export type Submission = z.infer<typeof submissionSchema>;
 

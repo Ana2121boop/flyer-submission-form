@@ -31,6 +31,11 @@ const envSchema = z.object({
   // Path to Chromium binary for Puppeteer PDF generation. Set in the
   // Dockerfile; defaults to the Debian Chromium location.
   PUPPETEER_EXECUTABLE_PATH: z.string().optional().default('/usr/bin/chromium'),
+
+  // How many months ahead the earliest valid flyer start date must be.
+  // 1 = first of next month, 2 = first of month-after-next, etc. The colleague's
+  // rule says "nothing in the current month" so the minimum is 1.
+  FLYER_ADVANCE_MONTHS: z.coerce.number().int().min(1).max(12).default(2),
 });
 
 export const env = envSchema.parse(process.env);

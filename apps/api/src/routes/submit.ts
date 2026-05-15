@@ -6,8 +6,9 @@ import {
   submissionProductColours,
   submissionProductDimensions,
 } from '@flyer/db';
-import { submissionSchema } from '@flyer/shared';
+import { submissionSchema, earliestFlyerStartDate } from '@flyer/shared';
 import { sendNewSubmissionEmail } from '../services/email.js';
+import { env } from '../env.js';
 
 export async function submitRoutes(app: FastifyInstance) {
   app.post('/api/submit', async (req, reply) => {
@@ -16,6 +17,19 @@ export async function submitRoutes(app: FastifyInstance) {
       return reply.code(400).send({ message: 'Bad Request', issues: parsed.error.issues });
     }
     const data = parsed.data;
+
+    // Server-enforced lead time. The shared schema doesn't know about env,
+    // so we apply it here.
+    const earliest = earliestFlyerStartDate(env.FLYER_ADVANCE_MONTHS);
+    if (data.flyerStartDate < earliest) {
+      return reply.code(400).send({
+        message: 'Bad Request',
+        issues: [{
+          path: ['flyerStartDate'],
+          message: `Flyer start date must be ${earliest} or later`,
+        }],
+      });
+    }
 
     const db = getDb();
 

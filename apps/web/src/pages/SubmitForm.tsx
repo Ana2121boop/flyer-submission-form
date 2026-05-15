@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import ProductsSection, { type Product } from '../components/ProductsSection';
 import FormProgressBar from '../components/FormProgressBar';
@@ -42,10 +42,10 @@ type FormState = {
 
 const DRAFT_KEY = 'flyer_draft_v3';
 
-function firstOfNextMonth(): string {
+function earliestStart(advanceMonths: number): string {
   const now = new Date();
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return next.toISOString().slice(0, 10);
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + advanceMonths, 1));
+  return d.toISOString().slice(0, 10);
 }
 
 function emptyForm(): FormState {
@@ -105,6 +105,14 @@ function computeFurthest(f: FormState): StepId {
 }
 
 export default function SubmitForm() {
+  const { data: config } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => api<{ flyerAdvanceMonths: number }>('/api/config'),
+    staleTime: 60_000 * 60, // 1 hour
+  });
+  const advanceMonths = config?.flyerAdvanceMonths ?? 1;
+  const earliest = earliestStart(advanceMonths);
+
   const [form, setForm] = useState<FormState>(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
     if (saved) {
@@ -324,11 +332,11 @@ export default function SubmitForm() {
       >
         <p className="text-sm text-slate-600 mb-2">Pick when the flyer runs and how big it should be.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Flyer starts" required hint={`Earliest allowed: ${formatHumanDate(firstOfNextMonth())}`}>
+          <Field label="Flyer starts" required hint={`Earliest allowed: ${formatHumanDate(earliest)} (${advanceMonths === 1 ? '1 month' : `${advanceMonths} months`} lead time)`}>
             <input
               type="date"
               value={form.flyerStartDate}
-              min={firstOfNextMonth()}
+              min={earliest}
               onChange={(e) => update('flyerStartDate', e.target.value)}
               className={inputCls}
             />
@@ -337,7 +345,7 @@ export default function SubmitForm() {
             <input
               type="date"
               value={form.flyerEndDate}
-              min={form.flyerStartDate || firstOfNextMonth()}
+              min={form.flyerStartDate || earliest}
               onChange={(e) => update('flyerEndDate', e.target.value)}
               className={inputCls}
             />
