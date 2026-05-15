@@ -6,6 +6,11 @@ import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { env } from './env.js';
+import { loginRoutes } from './routes/admin/login.js';
+import { submitRoutes } from './routes/submit.js';
+import { submissionsAdminRoutes } from './routes/admin/submissions.js';
+import { flyerWindowsRoutes } from './routes/admin/flyer-windows.js';
+import { categoriesRoutes } from './routes/admin/categories.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -27,6 +32,12 @@ async function buildServer() {
     timestamp: new Date().toISOString(),
     version: '2.0.0',
   }));
+
+  await app.register(loginRoutes);
+  await app.register(submitRoutes);
+  await app.register(submissionsAdminRoutes);
+  await app.register(flyerWindowsRoutes);
+  await app.register(categoriesRoutes);
 
   // Serve legacy frontend during the transition. Will be replaced by apps/web build in Phase 4.
   const legacyRoot = resolve(__dirname, '../../../legacy');
