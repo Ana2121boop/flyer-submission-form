@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const FLYER_SIZES = ['standard', '8.5x11'] as const;
 export const PRICE_UNITS = ['each', 'sqft', 'lnft', 'lift', 'pack', 'box', 'roll', 'pair'] as const;
 export const BLOCK_SIZES = [1, 2, 3] as const;
-export const ALLOWED_PAGE_COUNTS = [1, 2, 4, 6, 8, 10, 12] as const;
+export const ALLOWED_PAGE_COUNTS = [1, 2, 4, 6, 8] as const;
 
 export const productSchema = z.object({
   pageNumber: z.number().int().min(1),
@@ -47,7 +47,7 @@ export const submissionSchema = z.object({
   flyerSize: z.enum(FLYER_SIZES),
   pageCount: z.number().int().refine(
     (v) => (ALLOWED_PAGE_COUNTS as readonly number[]).includes(v),
-    'Page count must be 1 or an even number up to 12',
+    'Page count must be 1 or an even number up to 8',
   ),
 
   theme: z.string().max(200).optional().nullable(),
@@ -95,7 +95,7 @@ export const flyerWindowBaseSchema = z.object({
   flyerEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   submissionDeadline: z.string().datetime(),
   flyerSize: z.enum(FLYER_SIZES),
-  pageCount: z.number().int().refine((v) => (ALLOWED_PAGE_COUNTS as readonly number[]).includes(v), 'Page count must be 1 or an even number up to 12'),
+  pageCount: z.number().int().refine((v) => (ALLOWED_PAGE_COUNTS as readonly number[]).includes(v), 'Page count must be 1 or an even number up to 8'),
   isOpen: z.boolean().default(true),
 });
 

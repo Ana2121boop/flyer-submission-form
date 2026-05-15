@@ -1,6 +1,19 @@
 import bcrypt from 'bcrypt';
-import { getDb, getPool, adminUsers } from '@flyer/db';
+import { getDb, getPool, adminUsers, productCategories } from '@flyer/db';
 import { env } from './env.js';
+
+const DEFAULT_CATEGORIES = [
+  'Paint',
+  'Flooring',
+  'Lumber',
+  'Lighting',
+  'Hardware',
+  'Tools',
+  'Outdoor / Garden',
+  'Plumbing',
+  'Electrical',
+  'Decor',
+];
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS admin_users (
@@ -119,8 +132,9 @@ export async function bootstrap(log: { info: (msg: string) => void; warn: (msg: 
   await pool.query(SCHEMA_SQL);
   log.info('Bootstrap: schema ready');
 
+  const db = getDb();
+
   if (env.ADMIN_USERNAME && env.ADMIN_PASSWORD) {
-    const db = getDb();
     const [existing] = await db.select().from(adminUsers).limit(1);
     if (!existing) {
       const hash = await bcrypt.hash(env.ADMIN_PASSWORD, 12);
@@ -134,5 +148,14 @@ export async function bootstrap(log: { info: (msg: string) => void; warn: (msg: 
     }
   } else {
     log.warn('Bootstrap: ADMIN_USERNAME / ADMIN_PASSWORD not set, no admin will be auto-created');
+  }
+
+  // Seed default categories if the table is empty so stores have something to pick from day one.
+  const [anyCategory] = await db.select().from(productCategories).limit(1);
+  if (!anyCategory) {
+    await db.insert(productCategories).values(
+      DEFAULT_CATEGORIES.map((name) => ({ name, isActive: true })),
+    );
+    log.info(`Bootstrap: seeded ${DEFAULT_CATEGORIES.length} default categories`);
   }
 }

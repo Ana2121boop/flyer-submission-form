@@ -16,10 +16,12 @@ export type Product = {
   imageUrl?: string;
   colours: string[];
   dimensions: string[];
-  regularPrice?: number;
-  salePrice?: number;
+  // Prices stored as strings to allow free typing (e.g. "1.5" without losing the dot
+  // when input type=number coerces values mid-keystroke). Parsed to numbers at submit time.
+  regularPrice: string;
+  salePrice: string;
   priceUnit?: string;
-  discountPercent?: number;
+  discountPercent: string;
   manualDiscountDescription?: string;
   isMainFlyerProduct: boolean;
   isBundle: boolean;
@@ -52,6 +54,9 @@ export function emptyProduct(pageNumber: number, slotIndex: number): Product {
     name: '',
     colours: [],
     dimensions: [],
+    regularPrice: '',
+    salePrice: '',
+    discountPercent: '',
     isMainFlyerProduct: false,
     isBundle: false,
     requestStockImage: false,
@@ -64,6 +69,13 @@ function computeMinBlockSize(p: Product): number {
   if (maxOptions > 5) return 3;
   if (maxOptions > 2) return 2;
   return 1;
+}
+
+function computeDiscount(regular: string, sale: string): string | null {
+  const reg = Number(regular);
+  const sal = Number(sale);
+  if (!regular || !sale || !Number.isFinite(reg) || !Number.isFinite(sal) || reg <= 0 || sal >= reg) return null;
+  return String(Math.round(((reg - sal) / reg) * 100));
 }
 
 function slotsForPage(pageNumber: number): number {
@@ -199,12 +211,6 @@ function ProductCard({
     }
   }
 
-  function recomputeDiscount(reg: number | undefined, sale: number | undefined) {
-    if (reg && sale && reg > 0 && sale < reg) {
-      const pct = Math.round(((reg - sale) / reg) * 100);
-      set('discountPercent', pct);
-    }
-  }
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
@@ -361,87 +367,113 @@ function ProductCard({
             </div>
           )}
 
-          {/* Price */}
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Regular price ($)">
+          {/* Pricing (all optional) */}
+          <div className="pt-1">
+            <div className="text-sm font-medium mb-1">Pricing <span className="text-slate-400 font-normal">(all optional)</span></div>
+            <p className="text-xs text-slate-500 mb-2">
+              Just regular price = everyday price. Add a sale price OR a discount % if it's on sale.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Regular ($)">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={product.regularPrice}
+                  onChange={(e) => {
+                    const next = { ...product, regularPrice: e.target.value };
+                    next.discountPercent = computeDiscount(next.regularPrice, next.salePrice) ?? product.discountPercent;
+                    onChange(next);
+                  }}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Sale ($)">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={product.salePrice}
+                  onChange={(e) => {
+                    const next = { ...product, salePrice: e.target.value };
+                    next.discountPercent = computeDiscount(next.regularPrice, next.salePrice) ?? product.discountPercent;
+                    onChange(next);
+                  }}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <Field label="Unit (per...)">
+                <select
+                  value={product.priceUnit ?? ''}
+                  onChange={(e) => set('priceUnit', e.target.value || undefined)}
+                  className={inputCls + ' bg-white'}
+                >
+                  <option value="">—</option>
+                  {PRICE_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                </select>
+              </Field>
+              <Field label="Discount %">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={product.discountPercent}
+                  onChange={(e) => set('discountPercent', e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+            <Field label="Other discount note" hint='e.g. "Buy 2 get 1 free"'>
               <input
-                type="number" inputMode="decimal" min="0" step="0.01"
-                value={product.regularPrice ?? ''}
-                onChange={(e) => {
-                  const v = e.target.value ? Number(e.target.value) : undefined;
-                  set('regularPrice', v);
-                  recomputeDiscount(v, product.salePrice);
-                }}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Sale price ($)">
-              <input
-                type="number" inputMode="decimal" min="0" step="0.01"
-                value={product.salePrice ?? ''}
-                onChange={(e) => {
-                  const v = e.target.value ? Number(e.target.value) : undefined;
-                  set('salePrice', v);
-                  recomputeDiscount(product.regularPrice, v);
-                }}
+                type="text"
+                value={product.manualDiscountDescription ?? ''}
+                onChange={(e) => set('manualDiscountDescription', e.target.value)}
                 className={inputCls}
               />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Unit">
-              <select
-                value={product.priceUnit ?? ''}
-                onChange={(e) => set('priceUnit', e.target.value || undefined)}
-                className={inputCls + ' bg-white'}
-              >
-                <option value="">—</option>
-                {PRICE_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Discount %">
-              <input
-                type="number" inputMode="numeric" min="0" max="100" step="1"
-                value={product.discountPercent ?? ''}
-                onChange={(e) => set('discountPercent', e.target.value ? Number(e.target.value) : undefined)}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-          <Field label="Other discount note" hint='e.g. "Buy 2 get 1 free"'>
-            <input
-              type="text"
-              value={product.manualDiscountDescription ?? ''}
-              onChange={(e) => set('manualDiscountDescription', e.target.value)}
-              className={inputCls}
-            />
+
+          {/* Size on flyer + page */}
+          <Field label="Size on flyer" hint={minBlock > 1 ? `Bumped to ${minBlock === 2 ? 'Medium' : 'Large'} because of multiple options` : 'How much space this product takes on the flyer'}>
+            <div className="flex gap-2">
+              {[1, 2, 3].map((n) => {
+                const labels = ['Small', 'Medium', 'Large'];
+                const disabled = n < minBlock;
+                const active = product.blockSize === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => set('blockSize', n)}
+                    className={
+                      'flex-1 py-3 rounded-lg border-2 font-medium transition-colors ' +
+                      (active
+                        ? 'border-brand-blue bg-brand-blue/10 text-brand-blue'
+                        : 'border-slate-200 text-slate-600 hover:border-slate-300') +
+                      (disabled ? ' opacity-40 cursor-not-allowed' : '')
+                    }
+                  >
+                    {labels[n - 1]}
+                  </button>
+                );
+              })}
+            </div>
           </Field>
 
-          {/* Block size + page */}
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Block size" hint={minBlock > 1 ? `Minimum ${minBlock} (auto)` : 'How many slots this product takes'}>
-              <select
-                value={product.blockSize}
-                onChange={(e) => set('blockSize', Math.max(minBlock, Number(e.target.value)))}
-                className={inputCls + ' bg-white'}
-              >
-                {[1, 2, 3].map((n) => (
-                  <option key={n} value={n} disabled={n < minBlock}>{n} block{n === 1 ? '' : 's'}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Page">
-              <select
-                value={product.pageNumber}
-                onChange={(e) => set('pageNumber', Number(e.target.value))}
-                className={inputCls + ' bg-white'}
-              >
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <option key={p} value={p}>Page {p}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
+          <Field label="Page in flyer">
+            <select
+              value={product.pageNumber}
+              onChange={(e) => set('pageNumber', Number(e.target.value))}
+              className={inputCls + ' bg-white'}
+            >
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <option key={p} value={p}>Page {p}</option>
+              ))}
+            </select>
+          </Field>
 
           {/* Toggles */}
           <Toggle

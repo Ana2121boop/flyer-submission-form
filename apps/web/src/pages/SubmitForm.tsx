@@ -7,7 +7,7 @@ const FLYER_SIZES: Array<{ value: 'standard' | '8.5x11'; label: string }> = [
   { value: 'standard', label: 'Standard' },
   { value: '8.5x11', label: '8.5" × 11" (Canada Post)' },
 ];
-const PAGE_COUNTS = [1, 2, 4, 6, 8, 10, 12] as const;
+const PAGE_COUNTS = [1, 2, 4, 6, 8] as const;
 
 type FormState = {
   storeName: string;
@@ -125,7 +125,14 @@ export default function SubmitForm() {
         reqPosters: Number(form.postersRequested) > 0,
         reqBanners: !!form.bannerDetails.trim(),
         printNotes: form.printNotes.trim() || null,
-        products: form.products.filter((p) => p.name.trim().length > 0),
+        products: form.products
+          .filter((p) => p.name.trim().length > 0)
+          .map((p) => ({
+            ...p,
+            regularPrice: parsePositive(p.regularPrice),
+            salePrice: parsePositive(p.salePrice),
+            discountPercent: parsePositive(p.discountPercent),
+          })),
       };
       return api<{ submissionId: number }>('/api/submit', { method: 'POST', body });
     },
@@ -184,7 +191,7 @@ export default function SubmitForm() {
               className={inputCls}
             />
           </Field>
-          <Field label="Flyer end date" required>
+          <Field label="Flyer end date" required hint="Typical flyers run 1 or 2 weeks">
             <input
               type="date"
               value={form.flyerEndDate}
@@ -314,6 +321,12 @@ export default function SubmitForm() {
 }
 
 const inputCls = "w-full rounded-lg border border-slate-300 px-3 py-3 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 outline-none";
+
+function parsePositive(s: string): number | null {
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
 
 function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
