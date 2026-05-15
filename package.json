@@ -1,16 +1,20 @@
 {
-  "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^22.14.1",
-    "@types/pg": "^8.11.13",
-    "@vercel/node": "^5.1.14",
-    "typescript": "^5.8.3"
+  "name": "flyer-submission-form",
+  "private": true,
+  "version": "2.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@flyer/api",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspace=@flyer/api",
+    "db:generate": "npm run generate --workspace=@flyer/db",
+    "db:push": "npm run push --workspace=@flyer/db",
+    "db:studio": "npm run studio --workspace=@flyer/db"
   },
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "jsonwebtoken": "^9.0.2",
-    "pdf-lib": "^1.17.1",
-    "pg": "^8.15.5"
+  "engines": {
+    "node": ">=20"
   }
 }
