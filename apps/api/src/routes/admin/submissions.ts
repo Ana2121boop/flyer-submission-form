@@ -97,19 +97,5 @@ export async function submissionsAdminRoutes(app: FastifyInstance) {
     return reply.send({ message: 'Restored', id: result[0].id });
   });
 
-  // Hard delete — permanent. Cascades to products / colours / dimensions via FK.
-  app.delete('/api/admin/submission/:id/permanent', { preHandler: requireAdmin }, async (req, reply) => {
-    const params = idParamSchema.safeParse(req.params);
-    if (!params.success) return reply.code(400).send({ message: 'Bad ID' });
-
-    const db = getDb();
-    // TODO Phase 1.5: also delete associated images from R2 here
-    const result = await db
-      .delete(submissions)
-      .where(eq(submissions.id, params.data.id))
-      .returning({ id: submissions.id });
-
-    if (result.length === 0) return reply.code(404).send({ message: 'Not found' });
-    return reply.send({ message: 'Permanently deleted', id: result[0].id });
-  });
+  // No permanent delete: submissions only go to the trash, so they can always be restored.
 }

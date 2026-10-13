@@ -76,6 +76,11 @@ try {
   });
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
   app.log.info(`Flyer API listening on :${env.PORT}`);
+  app.log.info(
+    env.RESEND_API_KEY && env.ADMIN_NOTIFY_EMAIL.length > 0
+      ? `Email notifications: on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s)`
+      : 'Email notifications: off (set RESEND_API_KEY and ADMIN_NOTIFY_EMAIL to turn them on)',
+  );
 } catch (err) {
   app.log.error(err);
   process.exit(1);

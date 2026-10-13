@@ -21,7 +21,12 @@ const envSchema = z.object({
   // Email notifications via Resend (resend.com). All optional — if any are
   // missing, the app boots but no emails are sent on submit.
   RESEND_API_KEY: z.string().optional(),
-  ADMIN_NOTIFY_EMAIL: z.string().email().optional(),
+  // One address, or several separated by commas.
+  ADMIN_NOTIFY_EMAIL: z
+    .string()
+    .optional()
+    .transform((v) => (v ?? '').split(',').map((s) => s.trim()).filter(Boolean))
+    .pipe(z.array(z.string().email())),
   FROM_EMAIL: z.string().email().optional().default('onboarding@resend.dev'),
 
   // Public URL of the deployed app, used to build links inside notification

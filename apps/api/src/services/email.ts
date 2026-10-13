@@ -23,7 +23,7 @@ export async function sendNewSubmissionEmail(
   log: { info: (msg: string) => void; warn: (msg: string) => void; error: (msg: string) => void },
 ): Promise<void> {
   const client = getResend();
-  if (!client || !env.ADMIN_NOTIFY_EMAIL) {
+  if (!client || env.ADMIN_NOTIFY_EMAIL.length === 0) {
     log.info('Email: RESEND_API_KEY or ADMIN_NOTIFY_EMAIL not set; skipping notification');
     return;
   }
@@ -48,18 +48,24 @@ export async function sendNewSubmissionEmail(
         Open submission →
       </a>
       <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">
-        Windsor Plywood flyer submissions. You're getting this because this email is set as ADMIN_NOTIFY_EMAIL.
+        Sent automatically by the Windsor Plywood flyer submission form.
       </p>
     </div>
   `;
 
   try {
-    await client.emails.send({
-      from: env.FROM_EMAIL,
+    // Resend returns API errors (bad key, unverified sender or recipient) in
+    // `error` rather than throwing, so check it before logging success.
+    const { error } = await client.emails.send({
+      from: `Flyer Submissions <${env.FROM_EMAIL}>`,
       to: env.ADMIN_NOTIFY_EMAIL,
       subject,
       html,
     });
+    if (error) {
+      log.error(`Email: failed to send notification for submission #${data.submissionId} — ${error.message}`);
+      return;
+    }
     log.info(`Email: notification sent for submission #${data.submissionId}`);
   } catch (err) {
     log.error(`Email: failed to send notification — ${err instanceof Error ? err.message : 'unknown'}`);

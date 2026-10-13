@@ -88,19 +88,11 @@ export default function AdminSubmissionDetail() {
     },
   });
 
-  const hardDelete = useMutation({
-    mutationFn: () => api(`/api/admin/submission/${id}/permanent`, { method: 'DELETE', auth: true }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['submissions'] });
-      navigate('/admin');
-    },
-  });
-
   const [pdfPending, setPdfPending] = useState(false);
   const [zipPending, setZipPending] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [confirmAction, setConfirmAction] = useState<'trash' | 'permanent' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'trash' | null>(null);
 
   async function downloadFile(path: string, filename: string, setBusy: (b: boolean) => void) {
     setBusy(true);
@@ -267,13 +259,6 @@ export default function AdminSubmissionDetail() {
           )}
           <button
             type="button"
-            onClick={() => setConfirmAction('permanent')}
-            className="px-4 py-2 border border-red-300 bg-red-50 text-brand-red rounded-lg hover:bg-red-100"
-          >
-            Delete permanently
-          </button>
-          <button
-            type="button"
             onClick={() => downloadFile(`/api/admin/submission/${id}/pdf`, `flyer-${id}.pdf`, setPdfPending)}
             disabled={pdfPending}
             className="px-4 py-2 border border-brand-blue text-brand-blue rounded-lg hover:bg-brand-blue hover:text-white disabled:opacity-50"
@@ -311,17 +296,6 @@ export default function AdminSubmissionDetail() {
         confirmVariant="warning"
         pending={softDelete.isPending}
         onConfirm={() => { softDelete.mutate(); setConfirmAction(null); }}
-        onCancel={() => setConfirmAction(null)}
-      />
-
-      <ConfirmDialog
-        open={confirmAction === 'permanent'}
-        title="Delete permanently?"
-        description={`This will permanently delete ${submission.storeName}'s submission and all its product data. Photos in storage stay.\n\nThis cannot be undone.`}
-        confirmLabel="Delete permanently"
-        confirmVariant="danger"
-        pending={hardDelete.isPending}
-        onConfirm={() => { hardDelete.mutate(); setConfirmAction(null); }}
         onCancel={() => setConfirmAction(null)}
       />
     </AdminShell>
