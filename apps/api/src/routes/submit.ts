@@ -7,7 +7,7 @@ import {
   submissionProductDimensions,
 } from '@flyer/db';
 import { submissionSchema, earliestFlyerStartDate } from '@flyer/shared';
-import { sendNewSubmissionEmail } from '../services/email.js';
+import { sendNewSubmissionEmail, sendSubmitterCopyEmail } from '../services/email.js';
 import { env } from '../env.js';
 
 export async function submitRoutes(app: FastifyInstance) {
@@ -37,6 +37,7 @@ export async function submitRoutes(app: FastifyInstance) {
       const [row] = await tx.insert(submissions).values({
         storeName: data.storeName,
         submittedBy: data.submittedBy,
+        submitterEmail: data.submitterEmail ?? null,
         flyerStartDate: data.flyerStartDate,
         flyerEndDate: data.flyerEndDate,
         flyerSize: data.flyerSize,
@@ -103,23 +104,26 @@ export async function submitRoutes(app: FastifyInstance) {
       return submissionId;
     });
 
-    // Fire-and-forget notification. Never block the response on it.
-    sendNewSubmissionEmail(
-      {
-        submissionId: insertedId,
-        storeName: data.storeName,
-        submittedBy: data.submittedBy,
-        productCount: data.products.length,
-        flyerStartDate: data.flyerStartDate,
-        flyerEndDate: data.flyerEndDate,
-        theme: data.theme ?? null,
-      },
-      {
-        info: (m) => app.log.info(m),
-        warn: (m) => app.log.warn(m),
-        error: (m) => app.log.error(m),
-      },
-    ).catch((err) => app.log.error(`Email task failed: ${err}`));
+    // Fire-and-forget notifications. Never block the response on them.
+    const notice = {
+      submissionId: insertedId,
+      storeName: data.storeName,
+      submittedBy: data.submittedBy,
+      submitterEmail: data.submitterEmail ?? null,
+      productCount: data.products.length,
+      flyerStartDate: data.flyerStartDate,
+      flyerEndDate: data.flyerEndDate,
+      flyerSize: data.flyerSize,
+      pageCount: data.pageCount,
+      theme: data.theme ?? null,
+    };
+    const log = {
+      info: (m: string) => app.log.info(m),
+      warn: (m: string) => app.log.warn(m),
+      error: (m: string) => app.log.error(m),
+    };
+    sendNewSubmissionEmail(notice, log).catch((err) => app.log.error(`Email task failed: ${err}`));
+    sendSubmitterCopyEmail(notice, log).catch((err) => app.log.error(`Email task failed: ${err}`));
 
     return reply.code(201).send({ message: 'Submission successful', submissionId: insertedId });
   });

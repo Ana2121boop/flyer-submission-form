@@ -28,6 +28,8 @@ const envSchema = z.object({
     .transform((v) => (v ?? '').split(',').map((s) => s.trim()).filter(Boolean))
     .pipe(z.array(z.string().email())),
   FROM_EMAIL: z.string().email().optional().default('onboarding@resend.dev'),
+  // Where store owners' replies to their copy go. Unset = no reply address.
+  REPLY_TO_EMAIL: z.string().email().optional(),
 
   // Public URL of the deployed app, used to build links inside notification
   // emails. Defaults to localhost for dev.

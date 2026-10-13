@@ -35,6 +35,7 @@ type AdminSubmission = {
   id: number;
   storeName: string;
   submittedBy: string;
+  submitterEmail: string | null;
   flyerStartDate: string | null;
   flyerEndDate: string | null;
   flyerSize: string | null;
@@ -155,6 +156,11 @@ export default function AdminSubmissionDetail() {
       <DetailCard title="Store">
         <Row label="Store">{submission.storeName}</Row>
         <Row label="Submitted by">{submission.submittedBy}</Row>
+        {submission.submitterEmail && (
+          <Row label="Email">
+            <a href={`mailto:${submission.submitterEmail}`} className="text-brand-blue hover:underline">{submission.submitterEmail}</a>
+          </Row>
+        )}
         <Row label="Theme">{submission.theme ?? <em className="text-slate-400">none</em>}</Row>
         <Row label="Submitted at">{new Date(submission.submittedAt).toLocaleString()}</Row>
       </DetailCard>

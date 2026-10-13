@@ -41,6 +41,7 @@ export type Product = z.infer<typeof productSchema>;
 export const submissionSchema = z.object({
   storeName: z.string().min(1, 'Store name is required').max(200),
   submittedBy: z.string().min(1, 'Submitter name is required').max(200),
+  submitterEmail: z.string().trim().email('Enter a valid email address').max(254).optional().nullable(),
 
   flyerStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   flyerEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),

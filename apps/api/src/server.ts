@@ -16,6 +16,7 @@ import { pdfRoutes } from './routes/admin/pdf.js';
 import { exportRoutes } from './routes/admin/export.js';
 import { uploadsRoutes } from './routes/uploads.js';
 import { configRoutes } from './routes/config.js';
+import { canEmailSubmitters } from './services/email.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -76,11 +77,10 @@ try {
   });
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
   app.log.info(`Flyer API listening on :${env.PORT}`);
-  app.log.info(
-    env.RESEND_API_KEY && env.ADMIN_NOTIFY_EMAIL.length > 0
-      ? `Email notifications: on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s)`
-      : 'Email notifications: off (set RESEND_API_KEY and ADMIN_NOTIFY_EMAIL to turn them on)',
-  );
+  const headOffice = env.RESEND_API_KEY && env.ADMIN_NOTIFY_EMAIL.length > 0
+    ? `on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s)`
+    : 'off';
+  app.log.info(`Email: head office notifications ${headOffice}; copies to store owners ${canEmailSubmitters() ? 'on' : 'off'}`);
 } catch (err) {
   app.log.error(err);
   process.exit(1);

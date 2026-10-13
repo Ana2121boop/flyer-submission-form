@@ -16,6 +16,7 @@ type StepId = typeof STEPS[number];
 type FormState = {
   storeName: string;
   submittedBy: string;
+  submitterEmail: string;
   theme: string;
 
   flyerStartDate: string;
@@ -52,6 +53,7 @@ function emptyForm(): FormState {
   return {
     storeName: '',
     submittedBy: '',
+    submitterEmail: '',
     theme: '',
     flyerStartDate: '',
     flyerEndDate: '',
@@ -121,13 +123,15 @@ function computeFurthest(f: FormState): StepId {
 export default function SubmitForm() {
   const { data: config } = useQuery({
     queryKey: ['config'],
-    queryFn: () => api<{ flyerAdvanceMonths: number }>('/api/config'),
+    queryFn: () => api<{ flyerAdvanceMonths: number; submitterCopies?: boolean }>('/api/config'),
     staleTime: 60_000 * 60, // 1 hour
   });
   // Default to 2 (matches server default) so we don't briefly show the wrong
   // earliest date while config is loading.
   const advanceMonths = config?.flyerAdvanceMonths ?? 2;
   const earliest = earliestStart(advanceMonths);
+  // Only ask for an email when the server can actually send the store a copy.
+  const askEmail = config?.submitterCopies === true;
 
   const [form, setForm] = useState<FormState>(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
@@ -152,6 +156,7 @@ export default function SubmitForm() {
   const [submitIssues, setSubmitIssues] = useState<Array<{ path: (string | number)[]; message: string; step: StepId }>>([]);
   const [submittedId, setSubmittedId] = useState<number | null>(null);
   const storeNameRef = useRef<HTMLInputElement>(null);
+  const copyTo = askEmail ? form.submitterEmail.trim() : '';
 
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
@@ -258,6 +263,7 @@ export default function SubmitForm() {
       const body = {
         storeName: form.storeName.trim(),
         submittedBy: form.submittedBy.trim(),
+        submitterEmail: copyTo || null,
         flyerStartDate: form.flyerStartDate,
         flyerEndDate: form.flyerEndDate,
         flyerSize: form.flyerSize,
@@ -327,7 +333,9 @@ export default function SubmitForm() {
       <div className="max-w-3xl mx-auto px-4 py-12 text-center">
         <div className="text-6xl mb-4">✓</div>
         <h1 className="text-2xl font-bold mb-2">Thanks, your flyer's in!</h1>
-        <p className="text-slate-600 mb-6">Head office got it. You're all done — close this page or start another.</p>
+        <p className="text-slate-600 mb-6">
+          Head office got it.{copyTo && <> A copy is on its way to <strong>{copyTo}</strong>.</>} You're all done — close this page or start another.
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -374,6 +382,11 @@ export default function SubmitForm() {
         <Field label="Your name" required>
           <input id="field-submittedBy" type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} placeholder="So we know who to ask if there's a question" />
         </Field>
+        {askEmail && (
+          <Field label="Your email (optional)" hint="We'll email you a copy of your submission. Any email address works.">
+            <input id="field-submitterEmail" type="email" inputMode="email" autoComplete="email" value={form.submitterEmail} onChange={(e) => update('submitterEmail', e.target.value)} className={inputCls} placeholder="you@example.com" />
+          </Field>
+        )}
         <Field label="Theme / title (optional)" hint='e.g. "Black Friday", "Spring DIY Sale"'>
           <input id="field-theme" type="text" value={form.theme} onChange={(e) => update('theme', e.target.value)} className={inputCls} />
         </Field>
@@ -578,6 +591,7 @@ export default function SubmitForm() {
         <div className="bg-slate-50 rounded-lg p-3 text-sm space-y-1 mt-2">
           <div><span className="text-slate-500">Store:</span> <strong>{form.storeName}</strong></div>
           <div><span className="text-slate-500">Submitted by:</span> {form.submittedBy}</div>
+          {copyTo && <div><span className="text-slate-500">Copy emailed to:</span> {copyTo}</div>}
           <div><span className="text-slate-500">Dates:</span> {form.flyerStartDate} → {form.flyerEndDate}</div>
           <div><span className="text-slate-500">Size:</span> {form.flyerSize} · {form.pageCount} pages</div>
           <div><span className="text-slate-500">Products:</span> {form.products.filter((p) => p.name.trim()).length}</div>
@@ -655,7 +669,7 @@ export default function SubmitForm() {
 function stepForPath(path: (string | number)[]): StepId {
   if (!path.length) return 'review';
   const top = String(path[0]);
-  if (['storeName', 'submittedBy', 'theme'].includes(top)) return 'store';
+  if (['storeName', 'submittedBy', 'submitterEmail', 'theme'].includes(top)) return 'store';
   if (['flyerStartDate', 'flyerEndDate', 'flyerSize', 'pageCount'].includes(top)) return 'dates';
   if (top === 'products') return 'products';
   return 'marketing';
@@ -677,6 +691,7 @@ function describeIssue(path: (string | number)[]): string {
   const labels: Record<string, string> = {
     storeName: 'Store name',
     submittedBy: 'Your name',
+    submitterEmail: 'Your email',
     theme: 'Theme',
     flyerStartDate: 'Flyer start date',
     flyerEndDate: 'Flyer end date',

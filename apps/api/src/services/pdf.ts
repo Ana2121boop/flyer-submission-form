@@ -84,7 +84,7 @@ const esc = (s: string | number | null | undefined): string => {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 };
 
-const fmtDate = (d: string | null): string => {
+export const fmtDate = (d: string | null): string => {
   if (!d) return '—';
   try { return new Date(d + 'T00:00:00').toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }); }
   catch { return d; }

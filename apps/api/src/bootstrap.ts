@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   flyer_window_id INTEGER REFERENCES flyer_windows(id),
   store_name TEXT NOT NULL,
   submitted_by TEXT NOT NULL,
+  submitter_email TEXT,
   flyer_start_date DATE,
   flyer_end_date DATE,
   flyer_size TEXT,
@@ -78,6 +79,7 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS flyer_start_date DATE;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS flyer_end_date DATE;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS flyer_size TEXT;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS page_count INTEGER;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS submitter_email TEXT;
 CREATE INDEX IF NOT EXISTS submissions_submitted_at_idx ON submissions(submitted_at);
 CREATE INDEX IF NOT EXISTS submissions_store_name_idx ON submissions(store_name);
 CREATE INDEX IF NOT EXISTS submissions_deleted_at_idx ON submissions(deleted_at);
