@@ -7,7 +7,7 @@ import {
   submissionProductDimensions,
 } from '@flyer/db';
 import { submissionSchema, earliestFlyerStartDate } from '@flyer/shared';
-import { sendNewSubmissionEmail, sendSubmitterCopyEmail } from '../services/email.js';
+import { canEmailSubmitters, sendNewSubmissionEmail, sendSubmitterCopyEmail } from '../services/email.js';
 import { env } from '../env.js';
 
 export async function submitRoutes(app: FastifyInstance) {
@@ -27,6 +27,17 @@ export async function submitRoutes(app: FastifyInstance) {
         issues: [{
           path: ['flyerStartDate'],
           message: `Flyer start date must be ${earliest} or later`,
+        }],
+      });
+    }
+
+    // The form requires the store's email whenever the server can send it a copy.
+    if (canEmailSubmitters() && !data.submitterEmail) {
+      return reply.code(400).send({
+        message: 'Bad Request',
+        issues: [{
+          path: ['submitterEmail'],
+          message: 'Enter your email so we can send you a copy',
         }],
       });
     }

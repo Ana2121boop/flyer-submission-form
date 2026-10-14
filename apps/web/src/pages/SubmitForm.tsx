@@ -73,8 +73,12 @@ function emptyForm(): FormState {
   };
 }
 
-function isStoreDone(f: FormState) {
-  return !!f.storeName.trim() && !!f.submittedBy.trim();
+// needsEmail: the server can email the store a copy, so the store's email is required.
+function isStoreDone(f: FormState, needsEmail = false) {
+  return !!f.storeName.trim() && !!f.submittedBy.trim() && (!needsEmail || isEmail(f.submitterEmail));
+}
+function isEmail(s: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 }
 function isDatesDone(f: FormState) {
   return !!f.flyerStartDate && !!f.flyerEndDate && !!f.flyerSize && f.pageCount > 0;
@@ -101,18 +105,18 @@ function isMarketingValid(f: FormState) {
   if (f.facebookAdsEnabled && !f.facebookAdsBudget.trim()) return false;
   return true;
 }
-function canContinue(step: StepId, f: FormState): boolean {
+function canContinue(step: StepId, f: FormState, needsEmail = false): boolean {
   switch (step) {
-    case 'store': return isStoreDone(f);
+    case 'store': return isStoreDone(f, needsEmail);
     case 'dates': return isDatesDone(f);
     case 'marketing': return isMarketingValid(f);
     case 'products': return isProductsDone(f);
-    case 'review': return isStoreDone(f) && isDatesDone(f) && isProductsDone(f) && isMarketingValid(f);
+    case 'review': return isStoreDone(f, needsEmail) && isDatesDone(f) && isProductsDone(f) && isMarketingValid(f);
   }
 }
 
-function computeFurthest(f: FormState): StepId {
-  if (!isStoreDone(f)) return 'store';
+function computeFurthest(f: FormState, needsEmail = false): StepId {
+  if (!isStoreDone(f, needsEmail)) return 'store';
   if (!isDatesDone(f)) return 'dates';
   // Marketing is optional but if invalid (budget missing), block on it
   if (!isMarketingValid(f)) return 'marketing';
@@ -238,11 +242,11 @@ export default function SubmitForm() {
 
   // Keep `furthest` in sync if user changes data later (e.g., clears their name)
   useEffect(() => {
-    const f = computeFurthest(form);
+    const f = computeFurthest(form, askEmail);
     if (indexOf(f) < indexOf(furthest)) {
       // Don't roll back furthest just because of typing — only on full clear.
       // But do recompute if they really did clear everything.
-      if (f === 'store' && !isStoreDone(form)) {
+      if (f === 'store' && (!isStoreDone(form) || (askEmail && !form.submitterEmail.trim()))) {
         setFurthest('store');
         setCurrentStep('store');
       }
@@ -250,7 +254,7 @@ export default function SubmitForm() {
       setFurthest(f);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.storeName, form.submittedBy, form.products.length]);
+  }, [form.storeName, form.submittedBy, form.submitterEmail, form.products.length, askEmail]);
 
   const submit = useMutation({
     onMutate: () => {
@@ -355,7 +359,7 @@ export default function SubmitForm() {
   const progressSteps = STEPS.slice(0, 4).map((s) => ({
     id: s,
     label: s === 'store' ? 'Store' : s === 'dates' ? 'Dates' : s === 'marketing' ? 'Marketing' : 'Products',
-    done: indexOf(s) < indexOf(furthest) || (s === furthest && canContinue(s, form)),
+    done: indexOf(s) < indexOf(furthest) || (s === furthest && canContinue(s, form, askEmail)),
     locked: !isReachable(s),
     onClick: () => goToStep(s),
   }));
@@ -370,10 +374,10 @@ export default function SubmitForm() {
       <StepCard
         id="store"
         title="1. Your store"
-        complete={isStoreDone(form)}
+        complete={isStoreDone(form, askEmail)}
         locked={!isReachable('store')}
         active={currentStep === 'store'}
-        summary={isStoreDone(form) ? `${form.storeName} · ${form.submittedBy}` : null}
+        summary={isStoreDone(form, askEmail) ? `${form.storeName} · ${form.submittedBy}` : null}
         onToggle={() => goToStep('store')}
       >
         <Field label="Store name" required>
@@ -383,7 +387,7 @@ export default function SubmitForm() {
           <input id="field-submittedBy" type="text" value={form.submittedBy} onChange={(e) => update('submittedBy', e.target.value)} className={inputCls} placeholder="So we know who to ask if there's a question" />
         </Field>
         {askEmail && (
-          <Field label="Your email (optional)" hint="We'll email you a copy of your submission. Any email address works.">
+          <Field label="Your email" required hint="We'll email you a copy of your submission. Any email address works.">
             <input id="field-submitterEmail" type="email" inputMode="email" autoComplete="email" value={form.submitterEmail} onChange={(e) => update('submitterEmail', e.target.value)} className={inputCls} placeholder="you@example.com" />
           </Field>
         )}
@@ -391,8 +395,8 @@ export default function SubmitForm() {
           <input id="field-theme" type="text" value={form.theme} onChange={(e) => update('theme', e.target.value)} className={inputCls} />
         </Field>
         <ContinueRow
-          complete={canContinue('store', form)}
-          incompleteHint="Enter your store name and your name"
+          complete={canContinue('store', form, askEmail)}
+          incompleteHint={askEmail ? "Enter your store name, your name and your email" : "Enter your store name and your name"}
           onContinue={advance}
           onTapHint={() => { storeNameRef.current?.focus(); }}
           label={continueLabelFor('store')}
@@ -601,7 +605,7 @@ export default function SubmitForm() {
         <button
           type="button"
           onClick={() => submit.mutate()}
-          disabled={submit.isPending || !canContinue('review', form)}
+          disabled={submit.isPending || !canContinue('review', form, askEmail)}
           className="w-full bg-brand-blue text-white font-bold rounded-lg py-4 mt-3 hover:bg-brand-blue-dark disabled:opacity-50 text-lg"
         >
           {submit.isPending ? 'Sending…' : 'Submit flyer'}
