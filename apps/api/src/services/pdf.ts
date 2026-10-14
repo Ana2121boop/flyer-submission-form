@@ -90,6 +90,14 @@ export const fmtDate = (d: string | null): string => {
   catch { return d; }
 };
 
+// The server runs in UTC, so show times in Pacific (head office's time), with the zone.
+const fmtDateTime = (d: string | Date): string =>
+  new Date(d).toLocaleString('en-CA', {
+    timeZone: 'America/Vancouver',
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  });
+
 function productCard(p: ProductRow): string {
   const categoryName = p.category?.name ?? p.categoryOther ?? null;
   const priceLine = (p.regularPrice || p.salePrice) ? `
@@ -192,7 +200,7 @@ export function renderSubmissionHtml(s: SubmissionData): string {
       ${s.theme ? `<div class="meta-row"><strong>Theme:</strong> ${esc(s.theme)}</div>` : ''}
     </div>
     <div class="meta-row" style="text-align: right;">
-      Submitted ${esc(new Date(s.submittedAt).toLocaleString('en-CA'))}
+      Submitted ${esc(fmtDateTime(s.submittedAt))}
     </div>
   </div>
 
@@ -220,7 +228,7 @@ export function renderSubmissionHtml(s: SubmissionData): string {
   ${s.generalNotes ? `<h3>General</h3><div class="notes">${esc(s.generalNotes)}</div>` : ''}
   ${s.printNotes ? `<h3>Print / production</h3><div class="notes">${esc(s.printNotes)}</div>` : ''}
 
-  <div class="footer">Windsor Plywood · Flyer Submission · generated ${esc(new Date().toLocaleString('en-CA'))}</div>
+  <div class="footer">Windsor Plywood · Flyer Submission · generated ${esc(fmtDateTime(new Date()))}</div>
 </body>
 </html>`;
 }
