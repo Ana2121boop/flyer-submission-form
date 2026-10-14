@@ -37,10 +37,28 @@ export function canEmailSubmitters(): boolean {
   return !!env.RESEND_API_KEY && !env.FROM_EMAIL.toLowerCase().endsWith('@resend.dev');
 }
 
+// Head office's alert goes through the Gmail script when it's set up (the
+// script only sends it to Windsor addresses), otherwise through Resend.
 export async function sendNewSubmissionEmail(data: SubmissionNotification, log: Log): Promise<void> {
+  if (env.ADMIN_NOTIFY_EMAIL.length === 0) {
+    log.info('Email: ADMIN_NOTIFY_EMAIL not set; skipping notification');
+    return;
+  }
+
+  if (env.GMAIL_SCRIPT_URL) {
+    await sendViaGmailScript(env.GMAIL_SCRIPT_URL, {
+      kind: 'office',
+      to: env.ADMIN_NOTIFY_EMAIL,
+      submissionId: data.submissionId,
+      storeName: data.storeName,
+      rows: officeRows(data),
+    }, `notification for submission #${data.submissionId}`, log);
+    return;
+  }
+
   const client = getResend();
-  if (!client || env.ADMIN_NOTIFY_EMAIL.length === 0) {
-    log.info('Email: RESEND_API_KEY or ADMIN_NOTIFY_EMAIL not set; skipping notification');
+  if (!client) {
+    log.info('Email: neither GMAIL_SCRIPT_URL nor RESEND_API_KEY is set; skipping notification');
     return;
   }
 
@@ -77,17 +95,16 @@ export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: 
     log.warn(`Email: PDF for submission #${data.submissionId} failed, sending the store's copy without it — ${err instanceof Error ? err.message : 'unknown'}`);
   }
 
-  const rows = detailRows(data);
-
   if (env.GMAIL_SCRIPT_URL) {
     await sendViaGmailScript(env.GMAIL_SCRIPT_URL, {
+      kind: 'store',
       to: data.submitterEmail,
       storeName: data.storeName,
       submittedBy: data.submittedBy,
-      rows,
+      rows: detailRows(data),
       replyTo: env.REPLY_TO_EMAIL ?? null,
       pdfBase64: pdf ? pdf.toString('base64') : null,
-    }, data.submissionId, log);
+    }, `store's copy for submission #${data.submissionId}`, log);
     return;
   }
 
@@ -118,34 +135,43 @@ export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: 
   }
 }
 
-type GmailCopy = {
-  to: string;
-  storeName: string;
-  submittedBy: string;
-  rows: Array<[string, string]>;
-  replyTo: string | null;
-  pdfBase64: string | null;
-};
+type GmailEmail =
+  | {
+    kind: 'office';
+    to: string[];
+    submissionId: number;
+    storeName: string;
+    rows: Array<[string, string]>;
+  }
+  | {
+    kind: 'store';
+    to: string;
+    storeName: string;
+    submittedBy: string;
+    rows: Array<[string, string]>;
+    replyTo: string | null;
+    pdfBase64: string | null;
+  };
 
 // The Gmail script (apps/api/gmail-sender.gs) builds the email from these
-// details and sends it from its Gmail account.
-export async function sendViaGmailScript(url: string, copy: GmailCopy, submissionId: number, log: Log): Promise<void> {
+// details and sends it from its Gmail account. `what` names it in the logs.
+export async function sendViaGmailScript(url: string, email: GmailEmail, what: string, log: Log): Promise<void> {
   try {
     // Apps Script answers a POST with a redirect to its reply; fetch follows it.
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(copy),
+      body: JSON.stringify(email),
       signal: AbortSignal.timeout(60_000),
     });
     const result = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
     if (!result?.ok) {
-      log.error(`Email: failed to send the store's copy for submission #${submissionId} through Gmail — ${result?.error ?? `unexpected reply (HTTP ${res.status})`}`);
+      log.error(`Email: failed to send the ${what} through Gmail — ${result?.error ?? `unexpected reply (HTTP ${res.status})`}`);
       return;
     }
-    log.info(`Email: store's copy sent through Gmail for submission #${submissionId}`);
+    log.info(`Email: ${what} sent through Gmail`);
   } catch (err) {
-    log.error(`Email: failed to send the store's copy through Gmail — ${err instanceof Error ? err.message : 'unknown'}`);
+    log.error(`Email: failed to send the ${what} through Gmail — ${err instanceof Error ? err.message : 'unknown'}`);
   }
 }
 
@@ -168,13 +194,17 @@ export function headOfficeEmailHtml(data: SubmissionNotification): string {
     kicker: 'New flyer submission',
     title: data.storeName,
     intro: 'A store just sent in its flyer. Here are the details.',
-    rows: [
-      ['Submitted by', data.submittedBy],
-      ...(data.submitterEmail ? [['Email', data.submitterEmail] as [string, string]] : []),
-      ...detailRows(data).filter(([label]) => label !== 'Store'),
-    ],
+    rows: officeRows(data),
     button: { label: 'Open submission', href: `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/admin/submissions/${data.submissionId}` },
   });
+}
+
+function officeRows(data: SubmissionNotification): Array<[string, string]> {
+  return [
+    ['Submitted by', data.submittedBy],
+    ...(data.submitterEmail ? [['Email', data.submitterEmail] as [string, string]] : []),
+    ...detailRows(data).filter(([label]) => label !== 'Store'),
+  ];
 }
 
 export function storeCopyEmailHtml(data: SubmissionNotification, hasPdf: boolean): string {

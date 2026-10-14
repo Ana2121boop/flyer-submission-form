@@ -77,8 +77,9 @@ try {
   });
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
   app.log.info(`Flyer API listening on :${env.PORT}`);
-  const headOffice = env.RESEND_API_KEY && env.ADMIN_NOTIFY_EMAIL.length > 0
-    ? `on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s)`
+  const headOffice = env.ADMIN_NOTIFY_EMAIL.length === 0 ? 'off'
+    : env.GMAIL_SCRIPT_URL ? `on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s), through Gmail`
+    : env.RESEND_API_KEY ? `on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s), through Resend`
     : 'off';
   const storeCopies = env.GMAIL_SCRIPT_URL ? 'on, through Gmail' : canEmailSubmitters() ? 'on, through Resend' : 'off';
   app.log.info(`Email: head office notifications ${headOffice}; copies to store owners ${storeCopies}`);
