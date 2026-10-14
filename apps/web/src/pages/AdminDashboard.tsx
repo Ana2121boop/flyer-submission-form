@@ -40,7 +40,8 @@ export default function AdminDashboard() {
   // Start fresh whenever the list switches between with and without the trash.
   useEffect(() => { setSelected(new Set()); }, [showDeleted]);
 
-  const rows = data ?? [];
+  // The trash view lists only what's in the trash.
+  const rows = (data ?? []).filter((r) => !showDeleted || r.deletedAt);
   const chosen = rows.filter((r) => selected.has(r.id));
   const chosenLive = chosen.filter((r) => !r.deletedAt);
   const chosenTrashed = chosen.filter((r) => r.deletedAt);
@@ -139,13 +140,13 @@ export default function AdminDashboard() {
       {isLoading && <p className="text-slate-500">Loading…</p>}
       {isError && <p className="text-brand-red">Could not load submissions.</p>}
 
-      {data && data.length === 0 && (
+      {data && rows.length === 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
-          No submissions yet.
+          {showDeleted ? 'The trash is empty.' : 'No submissions yet.'}
         </div>
       )}
 
-      {data && data.length > 0 && (
+      {data && rows.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left">
@@ -168,13 +169,12 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {data.map((row) => (
+              {rows.map((row) => (
                 <tr
                   key={row.id}
                   className={
                     'border-t border-slate-100 cursor-pointer hover:bg-slate-50 ' +
-                    (selected.has(row.id) ? 'bg-blue-50 ' : '') +
-                    (row.deletedAt ? 'opacity-60' : '')
+                    (selected.has(row.id) ? 'bg-blue-50' : '')
                   }
                   onClick={() => navigate(`/admin/submissions/${row.id}`)}
                 >
@@ -187,10 +187,7 @@ export default function AdminDashboard() {
                       className="w-5 h-5 accent-brand-blue align-middle cursor-pointer"
                     />
                   </td>
-                  <td className="px-4 py-3 font-medium">
-                    {row.storeName}
-                    {row.deletedAt && <span className="text-xs text-amber-700 ml-2">(trash)</span>}
-                  </td>
+                  <td className="px-4 py-3 font-medium">{row.storeName}</td>
                   <td className="px-4 py-3 text-slate-600">{row.submittedBy}</td>
                   <td className="px-4 py-3 text-slate-600">{row.productCount}</td>
                   <td className="px-4 py-3 text-slate-500">
