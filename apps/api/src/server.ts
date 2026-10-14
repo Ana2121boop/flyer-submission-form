@@ -80,7 +80,8 @@ try {
   const headOffice = env.RESEND_API_KEY && env.ADMIN_NOTIFY_EMAIL.length > 0
     ? `on, ${env.ADMIN_NOTIFY_EMAIL.length} recipient(s)`
     : 'off';
-  app.log.info(`Email: head office notifications ${headOffice}; copies to store owners ${canEmailSubmitters() ? 'on' : 'off'}`);
+  const storeCopies = env.GMAIL_SCRIPT_URL ? 'on, through Gmail' : canEmailSubmitters() ? 'on, through Resend' : 'off';
+  app.log.info(`Email: head office notifications ${headOffice}; copies to store owners ${storeCopies}`);
 } catch (err) {
   app.log.error(err);
   process.exit(1);

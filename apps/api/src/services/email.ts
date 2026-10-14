@@ -28,10 +28,12 @@ type SubmissionNotification = {
   theme: string | null;
 };
 
-// Resend's shared test sender (onboarding@resend.dev) only delivers to the
-// Resend account's own address, so copies to store owners need FROM_EMAIL on a
-// domain verified in Resend.
+// Copies to store owners go out through the Gmail script when it's set up.
+// Otherwise they need Resend with FROM_EMAIL on a verified domain: Resend's
+// shared test sender (onboarding@resend.dev) only delivers to the Resend
+// account's own address.
 export function canEmailSubmitters(): boolean {
+  if (env.GMAIL_SCRIPT_URL) return true;
   return !!env.RESEND_API_KEY && !env.FROM_EMAIL.toLowerCase().endsWith('@resend.dev');
 }
 
@@ -89,8 +91,7 @@ export async function sendNewSubmissionEmail(data: SubmissionNotification, log: 
 
 // The store's own copy: a short summary, with the full submission attached as a PDF.
 export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: Log): Promise<void> {
-  const client = getResend();
-  if (!client || !data.submitterEmail || !canEmailSubmitters()) return;
+  if (!data.submitterEmail || !canEmailSubmitters()) return;
 
   let pdf: Buffer | null = null;
   try {
@@ -107,6 +108,21 @@ export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: 
     ...(data.theme ? [['Theme', data.theme] as [string, string]] : []),
     ['Products', String(data.productCount)],
   ];
+
+  if (env.GMAIL_SCRIPT_URL) {
+    await sendViaGmailScript(env.GMAIL_SCRIPT_URL, {
+      to: data.submitterEmail,
+      storeName: data.storeName,
+      submittedBy: data.submittedBy,
+      rows,
+      replyTo: env.REPLY_TO_EMAIL ?? null,
+      pdfBase64: pdf ? pdf.toString('base64') : null,
+    }, data.submissionId, log);
+    return;
+  }
+
+  const client = getResend();
+  if (!client) return;
 
   const subject = `We got your flyer submission: ${data.storeName}`;
   const html = `
@@ -141,6 +157,37 @@ export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: 
     log.info(`Email: store's copy sent for submission #${data.submissionId}`);
   } catch (err) {
     log.error(`Email: failed to send the store's copy — ${err instanceof Error ? err.message : 'unknown'}`);
+  }
+}
+
+type GmailCopy = {
+  to: string;
+  storeName: string;
+  submittedBy: string;
+  rows: Array<[string, string]>;
+  replyTo: string | null;
+  pdfBase64: string | null;
+};
+
+// The Gmail script (apps/api/gmail-sender.gs) builds the email from these
+// details and sends it from its Gmail account.
+export async function sendViaGmailScript(url: string, copy: GmailCopy, submissionId: number, log: Log): Promise<void> {
+  try {
+    // Apps Script answers a POST with a redirect to its reply; fetch follows it.
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(copy),
+      signal: AbortSignal.timeout(60_000),
+    });
+    const result = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+    if (!result?.ok) {
+      log.error(`Email: failed to send the store's copy for submission #${submissionId} through Gmail — ${result?.error ?? `unexpected reply (HTTP ${res.status})`}`);
+      return;
+    }
+    log.info(`Email: store's copy sent through Gmail for submission #${submissionId}`);
+  } catch (err) {
+    log.error(`Email: failed to send the store's copy through Gmail — ${err instanceof Error ? err.message : 'unknown'}`);
   }
 }
 

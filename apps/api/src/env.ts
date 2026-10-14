@@ -30,6 +30,9 @@ const envSchema = z.object({
   FROM_EMAIL: z.string().email().optional().default('onboarding@resend.dev'),
   // Where store owners' replies to their copy go. Unset = no reply address.
   REPLY_TO_EMAIL: z.string().email().optional(),
+  // Google Apps Script web app that sends store owners' copies from a Gmail
+  // account (apps/api/gmail-sender.gs). A bad value only turns the copies off.
+  GMAIL_SCRIPT_URL: z.string().trim().url().startsWith('https://').optional().catch(undefined),
 
   // Public URL of the deployed app, used to build links inside notification
   // emails. Defaults to localhost for dev.
