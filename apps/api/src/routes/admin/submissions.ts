@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { and, desc, eq, gte, ilike, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import {
   getDb,
   submissions,
@@ -97,5 +97,13 @@ export async function submissionsAdminRoutes(app: FastifyInstance) {
     return reply.send({ message: 'Restored', id: result[0].id });
   });
 
-  // No permanent delete: submissions only go to the trash, so they can always be restored.
+  // The only permanent delete: Empty trash, for everything already in the
+  // trash. Products, colours and dimensions go with them (foreign keys cascade).
+  app.delete('/api/admin/submissions/trash', { preHandler: requireAdmin }, async (_req, reply) => {
+    const deleted = await getDb()
+      .delete(submissions)
+      .where(isNotNull(submissions.deletedAt))
+      .returning({ id: submissions.id });
+    return reply.send({ message: 'Trash emptied', deleted: deleted.length });
+  });
 }
