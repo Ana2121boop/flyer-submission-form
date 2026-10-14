@@ -44,31 +44,8 @@ export async function sendNewSubmissionEmail(data: SubmissionNotification, log: 
     return;
   }
 
-  const detailUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/admin/submissions/${data.submissionId}`;
-  const dateLine = data.flyerStartDate && data.flyerEndDate
-    ? `${data.flyerStartDate} → ${data.flyerEndDate}`
-    : 'dates not provided';
-
   const subject = `New flyer submission: ${data.storeName}`;
-  const html = `
-    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937;">
-      <h2 style="color: #26408F; margin: 0 0 12px;">New flyer submission</h2>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
-        <tr><td style="padding: 4px 8px 4px 0; color: #6b7280; width: 140px;">Store</td><td style="padding: 4px 0;"><strong>${escapeHtml(data.storeName)}</strong></td></tr>
-        <tr><td style="padding: 4px 8px 4px 0; color: #6b7280;">Submitted by</td><td style="padding: 4px 0;">${escapeHtml(data.submittedBy)}</td></tr>
-        ${data.submitterEmail ? `<tr><td style="padding: 4px 8px 4px 0; color: #6b7280;">Email</td><td style="padding: 4px 0;">${escapeHtml(data.submitterEmail)}</td></tr>` : ''}
-        <tr><td style="padding: 4px 8px 4px 0; color: #6b7280;">Date range</td><td style="padding: 4px 0;">${escapeHtml(dateLine)}</td></tr>
-        ${data.theme ? `<tr><td style="padding: 4px 8px 4px 0; color: #6b7280;">Theme</td><td style="padding: 4px 0;">${escapeHtml(data.theme)}</td></tr>` : ''}
-        <tr><td style="padding: 4px 8px 4px 0; color: #6b7280;">Products</td><td style="padding: 4px 0;">${data.productCount}</td></tr>
-      </table>
-      <a href="${detailUrl}" style="display: inline-block; background: #26408F; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-        Open submission →
-      </a>
-      <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">
-        Sent automatically by the Windsor Plywood flyer submission form.
-      </p>
-    </div>
-  `;
+  const html = headOfficeEmailHtml(data);
 
   try {
     // Resend returns API errors (bad key, unverified sender or recipient) in
@@ -100,14 +77,7 @@ export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: 
     log.warn(`Email: PDF for submission #${data.submissionId} failed, sending the store's copy without it — ${err instanceof Error ? err.message : 'unknown'}`);
   }
 
-  const rows: Array<[string, string]> = [
-    ['Store', data.storeName],
-    ['Flyer dates', data.flyerStartDate && data.flyerEndDate ? `${fmtDate(data.flyerStartDate)} – ${fmtDate(data.flyerEndDate)}` : 'not set'],
-    ['Size', sizeLabel(data.flyerSize)],
-    ['Pages', data.pageCount ? String(data.pageCount) : 'not set'],
-    ...(data.theme ? [['Theme', data.theme] as [string, string]] : []),
-    ['Products', String(data.productCount)],
-  ];
+  const rows = detailRows(data);
 
   if (env.GMAIL_SCRIPT_URL) {
     await sendViaGmailScript(env.GMAIL_SCRIPT_URL, {
@@ -125,19 +95,7 @@ export async function sendSubmitterCopyEmail(data: SubmissionNotification, log: 
   if (!client) return;
 
   const subject = `We got your flyer submission: ${data.storeName}`;
-  const html = `
-    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937;">
-      <h2 style="color: #26408F; margin: 0 0 12px;">Thanks, ${escapeHtml(data.submittedBy)}! Your flyer is in.</h2>
-      <p style="margin: 0 0 16px;">Head office received your flyer submission.${pdf ? ' Your full submission is attached as a PDF.' : ''}</p>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
-        ${rows.map(([label, value]) => `<tr><td style="padding: 4px 8px 4px 0; color: #6b7280; width: 140px;">${label}</td><td style="padding: 4px 0;">${escapeHtml(value)}</td></tr>`).join('')}
-      </table>
-      <p style="margin: 0 0 16px;">Need to change something? ${env.REPLY_TO_EMAIL ? 'Just reply to this email.' : 'Get in touch with head office.'}</p>
-      <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">
-        Sent automatically by the Windsor Plywood flyer submission form.
-      </p>
-    </div>
-  `;
+  const html = storeCopyEmailHtml(data, !!pdf);
 
   try {
     const { error } = await client.emails.send({
@@ -203,6 +161,109 @@ async function renderSubmissionPdf(id: number): Promise<Buffer | null> {
   });
   if (!submission) return null;
   return renderHtmlToPdf(renderSubmissionHtml(submission as Parameters<typeof renderSubmissionHtml>[0]));
+}
+
+export function headOfficeEmailHtml(data: SubmissionNotification): string {
+  return windsorEmailHtml({
+    kicker: 'New flyer submission',
+    title: data.storeName,
+    intro: 'A store just sent in its flyer. Here are the details.',
+    rows: [
+      ['Submitted by', data.submittedBy],
+      ...(data.submitterEmail ? [['Email', data.submitterEmail] as [string, string]] : []),
+      ...detailRows(data).filter(([label]) => label !== 'Store'),
+    ],
+    button: { label: 'Open submission', href: `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/admin/submissions/${data.submissionId}` },
+  });
+}
+
+export function storeCopyEmailHtml(data: SubmissionNotification, hasPdf: boolean): string {
+  return windsorEmailHtml({
+    kicker: 'Flyer submission received',
+    title: `Thanks, ${data.submittedBy}! Your flyer is in.`,
+    intro: `Head office received your flyer submission.${hasPdf ? ' Your full submission is attached as a PDF.' : ''}`,
+    rows: detailRows(data),
+    note: `Need to change something? ${env.REPLY_TO_EMAIL ? 'Just reply to this email.' : 'Get in touch with head office.'}`,
+  });
+}
+
+function detailRows(data: SubmissionNotification): Array<[string, string]> {
+  return [
+    ['Store', data.storeName],
+    ['Flyer dates', data.flyerStartDate && data.flyerEndDate ? `${fmtDate(data.flyerStartDate)} – ${fmtDate(data.flyerEndDate)}` : 'not set'],
+    ['Size', sizeLabel(data.flyerSize)],
+    ['Pages', data.pageCount ? String(data.pageCount) : 'not set'],
+    ...(data.theme ? [['Theme', data.theme] as [string, string]] : []),
+    ['Products', String(data.productCount)],
+  ];
+}
+
+// The Windsor look for every email: the logo on a blue band, a red rule, square
+// panels. Tables and inline styles, so it holds up in Outlook and Gmail.
+// apps/api/gmail-sender.gs builds the same layout for store copies sent by Gmail.
+const BRAND_BLUE = '#26408F';
+const BRAND_RED = '#ED1C2B';
+const FONT = `Montserrat, 'Helvetica Neue', Arial, sans-serif`;
+
+type EmailParts = {
+  kicker: string;
+  title: string;
+  intro: string;
+  rows: Array<[string, string]>;
+  button?: { label: string; href: string };
+  note?: string;
+};
+
+// Takes plain text and escapes it all.
+function windsorEmailHtml(p: EmailParts): string {
+  const logoUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/email/windsor-logo.png`;
+  const type = (size: number, line: number, weight: number, color: string) =>
+    `font-family: ${FONT}; font-size: ${size}px; line-height: ${line}px; font-weight: ${weight}; color: ${color};`;
+  const rows = p.rows.map(([label, value], i) => {
+    const rule = i > 0 ? 'border-top: 1px solid #E3E7EF;' : '';
+    return `<tr>
+          <td style="${rule} padding: 12px 16px; width: 120px; vertical-align: top; ${type(11, 18, 700, '#6B7280')} letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(label)}</td>
+          <td style="${rule} padding: 12px 16px; vertical-align: top; ${type(15, 22, 600, '#111827')}">${escapeHtml(value)}</td>
+        </tr>`;
+  }).join('');
+  const button = p.button
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;"><tr><td style="background: ${BRAND_BLUE};">
+          <a href="${escapeHtml(p.button.href)}" style="display: inline-block; padding: 14px 24px; ${type(13, 16, 800, '#FFFFFF')} letter-spacing: 1px; text-transform: uppercase; text-decoration: none;">${escapeHtml(p.button.label)} &rarr;</a>
+        </td></tr></table>`
+    : '';
+  const note = p.note ? `<p style="margin: 24px 0 0; ${type(14, 22, 500, '#374151')}">${escapeHtml(p.note)}</p>` : '';
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; background: #EEF1F6;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #EEF1F6;"><tr><td align="center" style="padding: 24px 12px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; background: #FFFFFF;">
+      <tr><td style="background: ${BRAND_BLUE}; padding: 28px 32px;">
+        <img src="${logoUrl}" width="280" alt="Windsor Plywood" style="display: block; width: 280px; max-width: 100%; height: auto; border: 0; ${type(20, 28, 800, '#FFFFFF')}">
+      </td></tr>
+      <tr><td style="background: ${BRAND_RED}; height: 4px; line-height: 4px; font-size: 0;">&nbsp;</td></tr>
+      <tr><td style="padding: 32px;">
+        <p style="margin: 0 0 8px; ${type(12, 16, 800, BRAND_RED)} letter-spacing: 2px; text-transform: uppercase;">${escapeHtml(p.kicker)}</p>
+        <h1 style="margin: 0 0 12px; ${type(26, 32, 800, BRAND_BLUE)}">${escapeHtml(p.title)}</h1>
+        <p style="margin: 0 0 24px; ${type(15, 23, 500, '#374151')}">${escapeHtml(p.intro)}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #F5F7FB; border-left: 4px solid ${BRAND_BLUE};">
+        ${rows}
+        </table>
+        ${button}${note}
+      </td></tr>
+      <tr><td style="padding: 0 32px 28px;">
+        <p style="margin: 0; padding-top: 16px; border-top: 1px solid #E3E7EF; ${type(12, 18, 500, '#9CA3AF')}">Sent automatically by the Windsor Plywood flyer submission form.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>`;
 }
 
 function sizeLabel(size: string | null): string {
