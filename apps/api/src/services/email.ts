@@ -46,12 +46,14 @@ export async function sendNewSubmissionEmail(data: SubmissionNotification, log: 
   }
 
   if (env.GMAIL_SCRIPT_URL) {
+    // No Open submission link (the script adds none without a submissionId):
+    // Windsor's mail filter held back the Gmail alerts that linked to the
+    // railway.app address. The submission number is in the details instead.
     await sendViaGmailScript(env.GMAIL_SCRIPT_URL, {
       kind: 'office',
       to: env.ADMIN_NOTIFY_EMAIL,
-      submissionId: data.submissionId,
       storeName: data.storeName,
-      rows: officeRows(data),
+      rows: [['Submission', `#${data.submissionId}`], ...officeRows(data)],
     }, `notification for submission #${data.submissionId}`, log);
     return;
   }
@@ -139,7 +141,6 @@ type GmailEmail =
   | {
     kind: 'office';
     to: string[];
-    submissionId: number;
     storeName: string;
     rows: Array<[string, string]>;
   }
